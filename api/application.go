@@ -30,6 +30,11 @@ func main() {
 		rest.Route{"GET", "/whooplist/:Day/:Time", GetWhooplists},	 
 		rest.Route{"GET", "/whooplist/:ListId/:Page/coordinate/:Lat/:Long/:Radius", GetWhooplistCoordinate},
 		rest.Route{"GET", "/whooplist/:ListId/:Page/city/:LocationId", GetWhooplistLocation},
+		
+		/* Newsfeed Routes */
+		rest.Route{"GET", "/newsfeed", GetNewsfeed},
+		rest.Route{"GET", "/newsfeed/refresh/:LatestId/", GetNewsfeedRefresh},
+		rest.Route{"GET", "/newsfeed/older/:EarliestId/", GetNewsfeedOlder},
 
 		/* Location Routes */
 		rest.Route{"GET", "/locations/:LocationId", GetwLocation},	

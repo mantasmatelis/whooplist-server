@@ -1,8 +1,6 @@
 package whooplist
 
 import (
-//	_ "github.com/bmizerany/pq"
-//	"database/sql"
 	"time"
 )
 
