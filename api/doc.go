@@ -21,13 +21,17 @@ Lack of existance is shown with a 404 response code.
 A forbidden request (i.e. updating a user that is not your own) returns a 403.
 A general bad request returns a 400.
 Errors do not come with a response body unless otherwise stated.
-(Server errors in the form of a 50x from nginx are also possible. Handle them.)
+(Server errors in the form of a 50x from nginx are also possible. Handle them with a "Whoops! Something went wrong!" or similar. Keep logs!!)
 
 For "Show" type routes, the corresponding (array of) structure(s) in models.go is returned in JSON format. All parameters are in the URL to facilitate ease of caching.
 For "Create" type routes, POST data for each field in the corresponding structure in models.go is required. The information that would be returned from the following corresponding "Show" request is returned.
 For "Update" type routes, POST data for the updated fields in the corresponding structure in models.go is required. The information that would be returned from the following corresponding "Show" request is returned.
 For "Delete" type routes, no POST data or response is returned.
 
-Client/server authentication occurs in /users/login, where a user object as well as a key is returned. For all requests following login, the key should be provided in the request body (Yes it is possible to have a request body for GET).
+Client/server authentication occurs in /users/login, where a user object as well as a key is returned. For all requests following login, the key should be provided in the request body (Yes it is possible to have a request body for GET). Send key even if not required, keys are nice to have for server side tracking.
+
+Pictures are provided as URLs, they will be served from a separate server|container optimized for static files. URLs will be entirely unique and can be cached forever.
+
+
 */
 package main

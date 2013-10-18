@@ -1,2 +1,3 @@
-*.swp
-*.swp
+*.sw*
+api/api
+user_hash/user_hash

@@ -1,62 +1,69 @@
 package whooplist
 
 import (
+	"strings"
+	"io"
+	"log"
+	"crypto/rand"
 	_ "github.com/lib/pq"
 	"database/sql"
-	"time"
+	//"time"
+	"encoding/base64"
+	"code.google.com/p/go.crypto/scrypt"
 )
 
 /* Application global database connection pool */
 var db *sql.DB
 
-var getUserDataStmt, createUserStmt, updateUserStmt, authUserStmt
-	loginUserInternalStmt, loginUserFacebookStmt, loginUserGoogleStmt,
-	deleteSessionStmt, getUserListsStmt, getUserListStmt, getUserListPlace,
+var getUserDataStmt, createUserStmt, updateUserStmt, deleteUserStmt,
+	authUserStmt, loginUserVerifyStmt, loginUserStmt,
+	deleteSessionStmt, getUserListsStmt, getUserListStmt, getUserListPlaceStmt,
 	putUserListStmt, deleteUserListStmt, getListTypesStmt,
 	getWhooplistCoordinateStmt, getWhooplistLocationStmt, getLocationStmt,
 	getLocationCoordinateStmt, getPlaceStmt *sql.Stmt
 
 func prepare() (err error) {
 	getUserDataStmt, err = db.Prepare(
-		"SELECT * FROM user WHERE id=?")
+		"SELECT id, email, name, birthday, school, picture, gender, role " +
+		"FROM public.user WHERE id = $1;")
 	if err != nil { return; }
 	
 	createUserStmt, err = db.Prepare(
-		"INSERT INTO user (id, email, name, password_hash, " + 
-		"facebook_id, gmail_id, role) VALUES (?, ?, ?, ?, ?, ?, ?)")
+		"INSERT INTO public.user (email, name, birthday, school, picture, " + 
+		"gender, password_hash, role) " +
+		"VALUES ($1, $2, $3, $4, $5, $6, $7, $8);")
 	if err != nil { return; }
 	
 	updateUserStmt, err = db.Prepare(
-		"UPDATE user SET email = ?, name = ?, password_hash = ?, " +
-		"facebook_id = ?, gmail_id = ?, role = ? WHERE id = ?")
+		"UPDATE public.user SET email = $1, name = $2, birthday = $3, school = $4, " +
+		"picture = $5, gender = $6,  password_hash = $7, " +
+		"role = $8 WHERE id = $9;")
 	if err != nil { return; }
-	
-	authUserStmt, err = db.Prepare(
-		"SELECT * FROM session WHERE key = ?")
-	if err != nil { return; }
-	
-	loginUserInternalCheckStmt, err = db.Prepare(
-		"SELECT * FROM user WHERE username = ? AND password = ?")
-	if err != nil { return; }
-	
-	loginUserInternalCreateStmt, err = db.Prepare(
-		"INSERT INTO session (user_id, key) VALUES (?, ?)")
+
+	deleteUserStmt, err = db.Prepare(
+		"DELETE FROM public.user WHERE id = $1;")
 	if err != nil { return; }	
 
-	loginUserFacebookStmt, err = db.Prepare(
-		"INSERT INTO session (user_id, key, facebook_token) VALUES (?, ?, ?)");
+	authUserStmt, err = db.Prepare(
+		"SELECT * FROM public.session WHERE key = $1;")
 	if err != nil { return; }
 	
-	loginUserGoogleStmt, err = db.Prepare(
-		"INSERT INTO session (user_id, key, google_token) VALUES (?, ?, ?)");
+	loginUserVerifyStmt, err = db.Prepare(
+		"SELECT id, email, name, birthday, school, picture, gender, role " +
+		"FROM public.user WHERE email = $1 AND password_hash = $2;")
+	if err != nil { return; }
+
+	loginUserStmt, err = db.Prepare(
+		"INSERT INTO public.session (user_id, key) " +
+		"VALUES ($1, $2);")
 	if err != nil { return; }
 	
 	deleteSessionStmt, err = db.Prepare(
-		"DELETE FROM session WHERE key = ? LIMIT 1");
+		"DELETE FROM public.session WHERE key = $1;");
 	if err != nil { return; }
-	
+/*	
 	getUserListsStmt, err = db.Prepare(
-		"SELECT list_id FROM list_item WHERE user_id = ?" +
+		"SELECT list_id FROM list_item WHERE user_id = ? " +
 		"GROUP BY list_id")
 	if err != nil { return; }
 
@@ -64,7 +71,6 @@ func prepare() (err error) {
 		"SELECT place_id FROM list_item " +
 		"WHERE user_id = ? AND list_id = ? " +
 		"ORDER BY rank")
-	)
 	if err != nil { return; }	
 
 	getUserListPlaceStmt, err = db.Prepare(
@@ -75,7 +81,8 @@ func prepare() (err error) {
 	if err != nil { return; }	
 
 	putUserListStmt, err = db.Prepare(
-		"INSERT INTO list_item (place_id, list_id, user_id, ranking) VALUES (?, ?, ?, ?)")
+		"INSERT INTO list_item (place_id, list_id, user_id, ranking) " +
+		"VALUES (?, ?, ?, ?)")
 	if err != nil { return; }
 	
 	deleteUserListStmt, err = db.Prepare(
@@ -128,71 +135,336 @@ func prepare() (err error) {
 	getPlaceStmt, err = db.Prepare(
 		"SELECT * FROM place WHERE id = ?")
 	if err != nil { return; }
+*/
+	return
+}
+
+
+func hash(username, password string) (hash string, err error) {
+	secret := "aYdZYlE9ybGXn5CldvQ3f/shKxNshtAOvqDlaw/wbUBHwc5r9zBal9hf9CDkGxSgddAMtNm+uz1G"
+	secretData, err := base64.StdEncoding.DecodeString(secret)
+
+	if err != nil {
+		return
+	}	
+
+	salt := make([]byte, len(secretData) + len(username))		
+
+	copy(salt, secretData)
+	copy(salt[len(secretData):], []byte(strings.ToLower(username)))	
+
+	hash_data, err := scrypt.Key([]byte(password), salt, 16384, 8, 1, 32) 	
+
+	log.Print(username)
+	log.Print(password)
+
+	hash = base64.StdEncoding.EncodeToString(hash_data)	
+
+	return
 }
 
 func Connect() (err error) {
-	db, err := sql.Open("postgres",
-		"user=whooplist dbname=whooplist password=whooplist sslmode=disable")
+	db, err = sql.Open("postgres",
+		"user=whooplist dbname=whooplist password=moteifae0ohcaiCo sslmode=disable search_path=public,pg_catalog")
 
 	if err == nil {
 		err = prepare()
 	}
+	return
 }
 
 func Disconnect() (err error) {
-	err := db.Close()
+	err = db.Close()
+	return
 }
 
-func GetUserData(id int) (user User, err error) {
+func GetUserData(id int64) (user *User, err error) {
+	res := getUserDataStmt.QueryRow(id)
+	user = new(User)
+	err = res.Scan(&user.Id, &user.Email, &user.Name, &user.Birthday, &user.School, &user.Picture, &user.Gender, &user.Role)
+
+	if err == sql.ErrNoRows {
+		user = nil
+		err = nil
+	} else if err != nil {
+		user = nil
+	}
+
+	return
+	
 }
 
 func CreateUser(user User) (err error) {	
+	_, err = createUserStmt.Exec(user.Email, user.Name, user.Birthday, user.School, user.Picture, user.Gender, user.PasswordHash, user.Role)
+	return
 }
 
 func UpdateUser(user User) (err error) {
+	_, err = updateUserStmt.Exec(user.Email, user.Name, user.Birthday, user.School, user.Picture, user.Gender, user.PasswordHash, user.Role)
+	return
 }
 
-func AuthUser(key string) (user User, session Session, err error) {
+func DeleteUser(userId int64) (err error) {
+	//TODO: Delete a user's lists as well!
+	_, err = deleteUserStmt.Exec(userId)
+	return
 }
 
-func LoginUserInternal(username, password string) (user User, session Session, err error) {
+func AuthUser(key string) (user *User, session *Session, err error) {	
+	res := authUserStmt.QueryRow(key)
+	session = new(Session)
+	err = res.Scan(&session.Id, &session.UserId, &session.Key, &session.LastAuth, &session.LastUse)
+
+	if err == sql.ErrNoRows {
+		session = nil
+		err = nil
+		return
+	}	
+	if err != nil {
+		return
+	}
+
+	user, err = GetUserData(session.UserId)
+	
+	return
 }
 
-func LoginUserFacebook(authToken string) (user User, session Session, err error) {
+func createSession(userId int64) (session *Session, err error) {
+	/* Generate a session key. Currently 192 bits of entropy. */
+	data := make([]byte, 24)
+	
+	n, err := io.ReadFull(rand.Reader, data)
+
+
+	if n != len(data) || err != nil {
+		return
+	}
+
+	key := base64.StdEncoding.EncodeToString(data)
+
+	_, err = loginUserStmt.Exec(userId, key, nil)
+
+	if err != nil {
+		return
+	}
+
+	/* TODO: We don't fill the whole session, we should identify if this is a problem. */
+
+	session = new(Session)
+
+	session.UserId = userId
+	session.Key = key
+	
+	return
 }
 
-func LoginUserGoogle(authToken string) (user User, session Session, err error) {
+func LoginUser(username, password string) (user *User, session *Session, err error) {
+	hash, err := hash(username, password)
+
+	log.Print(hash)	
+
+	if err != nil {
+		return
+	}
+
+	res := loginUserVerifyStmt.QueryRow(username, hash)	
+	user = new(User)
+	err = res.Scan(&user.Id, &user.Email, &user.Name, &user.Birthday, &user.School, &user.Picture, &user.Gender, &user.Role)
+
+	if err == sql.ErrNoRows {
+		err = nil
+		user = nil
+		return
+	}
+	if err != nil {
+		user = nil	
+		return
+	}
+
+
+	/* Generate a session key. Currently 192 bits of entropy. */
+        data := make([]byte, 24)
+        n, err := io.ReadFull(rand.Reader, data)
+
+        if n != len(data) || err != nil {
+		user = nil
+                return
+        }
+
+        key := base64.StdEncoding.EncodeToString(data)
+
+        _, err = loginUserStmt.Exec(user.Id, key)
+
+	if err != nil {
+		return
+	}
+	
+        /* TODO: We don't fill the whole session, we should identify if this is a problem. */
+
+	session = new(Session)
+        session.UserId = user.Id
+        session.Key = key
+
+	return
 }
 
-func DeleteSession(key string) (err error) {
+func DeleteSession(key string) (exist bool, err error) {
+	res, err := deleteSessionStmt.Exec(key)
+	if err == nil {
+		rows, _ := res.RowsAffected()
+		if rows == 1 {
+			exist = true
+		}
+	}
+	return
 }
 
-func GetUserLists(userId int) (lists []List, err error) {
+func GetUserLists(userId int) (lists []int, err error) {
+	rows, err := getUserListsStmt.Query(userId)
+
+	if err == sql.ErrNoRows {
+		err = nil
+		return
+	} else if err != nil {
+		return
+	}
+
+	lists = make([]int, 0, 10)
+
+	for rows.Next() {
+		var list int
+		err = rows.Scan(&list)
+		lists = append(lists, list)
+		if err != nil {
+			lists = nil
+			return
+		}
+	}
+
+	return
 }
 
-func GetUserList(userId, listId int) (list List, err error) {
+func GetUserList(userId, listId int) (list *UserList, err error) {
+	list = new(UserList)
+	list.UserId = userId
+	list.ListId = listId
+	list.Items = make([]ListItem, 0, 5)
+
+	rows, err := getUserListStmt.Query(userId, listId)
+
+	if err == sql.ErrNoRows {
+		list = nil
+		err = nil
+		return
+	} else if err != nil {
+		list = nil
+		return
+	}
+
+	for rows.Next() {
+		var curr ListItem
+		err = rows.Scan(&curr.Id, &curr.PlaceId, &curr.ListId, &curr.UserId, &curr.Ranking)
+		list.Items = append(list.Items, curr)
+		if err != nil {
+			list = nil
+			return
+		}
+	}
+	return
 }
 
-func PutUserList(userId int, list List) (err error) {
+func PutUserList(list UserList) (err error) {
+	tx, err := db.Begin()
+
+	if err != nil {
+		return
+	}
+
+	_, err = tx.Stmt(deleteUserListStmt).Exec(list.UserId, list.ListId)
+
+	if err != nil {
+		tx.Rollback()
+		return
+	}
+
+	for _, item := range list.Items {
+		_, err = tx.Stmt(putUserListStmt).Exec(item.PlaceId, item.ListId, item.UserId, item.Ranking)
+		if err != nil {
+			tx.Rollback()
+			return
+		}
+	}
+	
+	tx.Commit()
+	return
+
 }
 
 func DeleteUserList(userId, listId int) (err error) {
+	_, err = deleteUserListStmt.Exec(userId, listId)
+	return
 }
 
-func GetListTypes() (err error) {
+func GetListTypes() (lists []List, err error) {
+	lists = make([]List, 0, 20) //TODO: set capacity proper
+	rows, err := getListTypesStmt.Query()
+
+	if err != nil {
+		lists = nil
+		return
+	}	
+
+	for rows.Next() {
+		var curr List
+		err = rows.Scan(&curr.Id, &curr.Name, &curr.Icon)
+		lists = append(lists, curr) 	
+		if err != nil {
+			lists = nil
+			return
+		}
+	}
+	return
 }
 
-func GetWhooplistCoordinate(userId int, listId int, page int, lat float, long float, radius float) (list List, err error) {
+func GetWhooplistCoordinate(userId int, listId int, page int, lat float64, long float64, radius float64) (list *WhooplistCoordinate, err error) {
+	//TODO: Implement
+	return	
 }
 
-func GetWhooplistLocation(userId int, listId int, page int, locationId int) (list List, err error) {
+func GetWhooplistLocation(userId int, listId int, page int, locationId int) (list *WhooplistLocation, err error) {
+	//TODO: Implement
+	return
 }
 
-func GetLocation(locationId int) (location Location, err error) {
+func GetLocation(locationId int) (location *Location, err error) {
+	location = new(Location)
+	
+	res := getLocationStmt.QueryRow(locationId)
+	err = res.Scan(&location.Id, &location.Name)
+
+	if err != nil {
+		location = nil
+	}
+
+	return
 }
 
-func GetLocationCoordinate(lat, long float) (locations []Location, err error) {
+func GetLocationCoordinate(lat, long float64) (locations []Location, err error) {
+	//TODO: Implement
+	return
 }
 
-func GetPlace(placeId int) (place Place, err error) {
+func GetPlace(placeId int) (place *Place, err error) {
+	place = new(Place)
+
+	res := getPlaceStmt.QueryRow(placeId)
+	err = res.Scan(&place.Id, &place.Latitude, &place.Longitude,
+		&place.TomTomId, &place.Name,
+		&place.Address, &place.Phone)
+
+	if err != nil {
+		place = nil
+	}
+
+	return
 }
