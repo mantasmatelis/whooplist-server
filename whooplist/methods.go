@@ -24,7 +24,7 @@ var getUserDataStmt, createUserStmt, updateUserStmt, deleteUserStmt,
 
 func prepare() (err error) {
 	getUserDataStmt, err = db.Prepare(
-		"SELECT id, email, name, birthday, school, picture, gender, role " +
+		"SELECT id, email, name, birthday, school, picture, gender, password_hash, role " +
 		"FROM public.user WHERE id = $1;")
 	if err != nil { return; }
 	
@@ -33,11 +33,11 @@ func prepare() (err error) {
 		"gender, password_hash, role) " +
 		"VALUES ($1, $2, $3, $4, $5, $6, $7, $8);")
 	if err != nil { return; }
-	
+
 	updateUserStmt, err = db.Prepare(
-		"UPDATE public.user SET email = $1, name = $2, birthday = $3, school = $4, " +
+		"UPDATE public.user SET name = $2, birthday = $3, school = $4, " +
 		"picture = $5, gender = $6,  password_hash = $7, " +
-		"role = $8 WHERE id = $9;")
+		"role = $8 WHERE email = $1;")
 	if err != nil { return; }
 
 	deleteUserStmt, err = db.Prepare(
@@ -181,7 +181,7 @@ func Disconnect() (err error) {
 func GetUserData(id int64) (user *User, err error) {
 	res := getUserDataStmt.QueryRow(id)
 	user = new(User)
-	err = res.Scan(&user.Id, &user.Email, &user.Name, &user.Birthday, &user.School, &user.Picture, &user.Gender, &user.Role)
+	err = res.Scan(&user.Id, &user.Email, &user.Name, &user.Birthday, &user.School, &user.Picture, &user.Gender, &user.PasswordHash, &user.Role)
 
 	if err == sql.ErrNoRows {
 		user = nil
@@ -199,8 +199,36 @@ func CreateUser(user User) (err error) {
 	return
 }
 
+func CheckUpdateUser(email, password string) (user *User, err error) {
+	hash, err := hash(email, password)
+
+	if err != nil {
+		return
+	}	
+
+	user = new(User)
+	res := loginUserVerifyStmt.QueryRow(email, hash)
+	err = res.Scan(&user.Id, &user.Email, &user.Name, &user.Birthday, &user.School, &user.Picture, &user.Gender, &user.Role)
+	if err == sql.ErrNoRows {
+		user = nil
+		err = nil
+		return
+	}	
+	if err != nil {
+		user = nil
+		return
+        }
+        return
+}
+
 func UpdateUser(user User) (err error) {
-	_, err = updateUserStmt.Exec(user.Email, user.Name, user.Birthday, user.School, user.Picture, user.Gender, user.PasswordHash, user.Role)
+	var userHash string
+	if user.Password != "" {
+		userHash, _ = hash(user.Email, user.Password)
+	} else {
+		userHash = user.PasswordHash
+	}
+	_, err = updateUserStmt.Exec(user.Email, user.Name, user.Birthday, user.School, user.Picture, user.Gender, userHash, user.Role)
 	return
 }
 
