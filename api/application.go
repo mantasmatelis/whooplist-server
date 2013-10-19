@@ -9,6 +9,12 @@ import (
 )
 
 func main() {
+
+	err := whooplist.Connect()
+	if(err != nil) {
+	       log.Fatal("Could not connect to database/prepare statements, dying: " + err.Error())
+					        }
+
 	var router route.Router
 	router.SetRoutes(
 		/* User Routes */
@@ -17,7 +23,7 @@ func main() {
 		route.Route{"POST", "/users/:UserId", UpdateUser},
 		route.Route{"GET", "/users/:UserId", GetUser},
 		route.Route{"PUT", "/users", CreateUser},
-		
+
 		/* User List Routes */
 		route.Route{"GET", "/users/:UserId/lists", GetUserLists},
 		route.Route{"GET", "/users/:UserId/lists/:ListId", GetUserList},
@@ -28,17 +34,17 @@ func main() {
 		route.Route{"GET", "/listTypes", GetListTypes},
 
 		/* Whooplist Routes */
-		route.Route{"GET", "/whooplist/:Day/:Time", GetWhooplists},	 
+		route.Route{"GET", "/whooplist/:Day/:Time", GetWhooplists},
 		route.Route{"GET", "/whooplist/:ListId/:Page/coordinate/:Lat/:Long/:Radius", GetWhooplistCoordinate},
 		route.Route{"GET", "/whooplist/:ListId/:Page/location/:LocationId", GetWhooplistLocation},
-		
+
 		/* Newsfeed Routes */
 		route.Route{"GET", "/newsfeed/:Location/:LatestId", GetNewsfeed},
 		route.Route{"GET", "/newsfeed/:Location/older/:EarliestId/", GetNewsfeedOlder},
 
 		/* Location Routes */
-		route.Route{"GET", "/locations/:LocationId", GetLocation},	
-		route.Route{"GET", "/locations/:Latitude/:Longitude", GetLocationsCoordinate},		
+		route.Route{"GET", "/locations/:LocationId", GetLocation},
+		route.Route{"GET", "/locations/:Latitude/:Longitude", GetLocationsCoordinate},
 
 		/* Place Routes */
 		route.Route{"GET", "/places/:PlaceId", GetPlace},
@@ -54,7 +60,13 @@ func main() {
 
 	hs := &http.Server{
 		Addr:	":3000",
-		Handler: context.ClearHandler(logHandler(panicHandler(parseRequest(authenticate(errorHandler(s.handleRequest)))))),
+		Handler: context.ClearHandler(
+			logHandler(
+			panicHandler(
+			parseRequest(
+			authenticate(
+			errorHandler(
+			s.handleRequest)))))),
 	}
 
 	log.Fatal(hs.ListenAndServe())

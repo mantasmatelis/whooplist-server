@@ -27,9 +27,9 @@ func prepare() (err error) {
 		"SELECT id, email, name, birthday, school, picture, gender, password_hash, role " +
 		"FROM public.user WHERE id = $1;")
 	if err != nil { return; }
-	
+
 	createUserStmt, err = db.Prepare(
-		"INSERT INTO public.user (email, name, birthday, school, picture, " + 
+		"INSERT INTO public.user (email, name, birthday, school, picture, " +
 		"gender, password_hash, role) " +
 		"VALUES ($1, $2, $3, $4, $5, $6, $7, $8);")
 	if err != nil { return; }
@@ -42,12 +42,12 @@ func prepare() (err error) {
 
 	deleteUserStmt, err = db.Prepare(
 		"DELETE FROM public.user WHERE id = $1;")
-	if err != nil { return; }	
+	if err != nil { return; }
 
 	authUserStmt, err = db.Prepare(
 		"SELECT * FROM public.session WHERE key = $1;")
 	if err != nil { return; }
-	
+
 	loginUserVerifyStmt, err = db.Prepare(
 		"SELECT id, email, name, birthday, school, picture, gender, role " +
 		"FROM public.user WHERE email = $1 AND password_hash = $2;")
@@ -57,7 +57,7 @@ func prepare() (err error) {
 		"INSERT INTO public.session (user_id, key) " +
 		"VALUES ($1, $2);")
 	if err != nil { return; }
-	
+
 	deleteSessionStmt, err = db.Prepare(
 		"DELETE FROM public.session WHERE key = $1;");
 	if err != nil { return; }
