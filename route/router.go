@@ -56,7 +56,7 @@ func escapedPath(urlObj *url.URL) string {
 // The order matters, if multiple Routes match, the first defined will be used.
 func (self *Router) start() error {
 
-	self.trie = &Trie{root: &node{},}
+	self.trie = NewTrie()
 	self.index = map[*Route]int{}
 
 	for i, _ := range self.routes {

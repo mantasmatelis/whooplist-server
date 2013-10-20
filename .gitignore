@@ -1,3 +1,4 @@
 *.sw*
 api/api
+api/api.log
 user_hash/user_hash

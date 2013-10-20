@@ -1,19 +1,42 @@
 package main
 
 import (
+	"io"
+	"os"
 	"log"
 	"net/http"
-	"source.whooplist.com/whooplist"
-	"source.whooplist.com/route"
 	"github.com/gorilla/context"
+	"source.whooplist.com/route"
+	"source.whooplist.com/whooplist"
 )
 
-func main() {
+type MultiLog struct {
+	Out []io.Writer
+}
 
-	err := whooplist.Connect()
-	if(err != nil) {
-	       log.Fatal("Could not connect to database/prepare statements, dying: " + err.Error())
-					        }
+func (ml MultiLog) Write(p []byte) (n int, err error) {
+	for _, o := range ml.Out {
+		n, err = o.Write(p)
+		if err != nil {
+			panic("Could not log.")
+		}
+	}
+	return len(p), nil
+}
+
+func main() {
+	logFile, err := os.OpenFile("api.log", os.O_CREATE | os.O_RDWR | os.O_APPEND, 0660)
+
+	if err != nil {
+		panic("Could not create text log.")
+	}
+
+	log.SetOutput(&MultiLog{[]io.Writer{os.Stdout, logFile}})
+
+	err = whooplist.Connect()
+	if err != nil {
+		log.Fatal("Could not connect to database/prepare statements, dying: " + err.Error())
+	}
 
 	var router route.Router
 	router.SetRoutes(
@@ -50,24 +73,16 @@ func main() {
 		route.Route{"GET", "/places/:PlaceId", GetPlace},
 	)
 
-	err := whooplist.Connect()
-
-	if(err != nil) {
-		log.Fatal("Could not connect to database/prepare statements, dying: " + err.Error())
-	}
-
-	s := &Server{ Router: router}
-
+	s := &Server{Router: router}
 	hs := &http.Server{
-		Addr:	":3000",
+		Addr: ":3000",
 		Handler: context.ClearHandler(
 			logHandler(
-			panicHandler(
-			parseRequest(
-			authenticate(
-			errorHandler(
-			s.handleRequest)))))),
+				panicHandler(
+					parseRequest(
+						authenticate(
+							errorHandler(
+								s.handleRequest)))))),
 	}
-
 	log.Fatal(hs.ListenAndServe())
 }

@@ -43,10 +43,6 @@ func main() {
 	fmt.Println("Enter password")
 	password_raw, _ := in.ReadString('\n')
 	password := strings.TrimSpace(password_raw)
-	
-	fmt.Println(username)
-	fmt.Println(password)
-
 
 	fmt.Println("Your hash is:")
 	fmt.Println(hash(username, password))

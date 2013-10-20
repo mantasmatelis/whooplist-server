@@ -237,7 +237,7 @@ type Trie struct {
 }
 
 // Instanciate a Trie with an empty node as the root.
-func New() *Trie {
+func NewTrie() *Trie {
 	return &Trie{
 		root: &node{},
 	}

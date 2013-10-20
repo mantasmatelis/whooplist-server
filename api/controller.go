@@ -3,8 +3,8 @@ package main
 //TODO: change all Show in controller to Get
 
 import (
-	"strconv"
 	"log"
+	"strconv"
 	"net/http"
 	"github.com/gorilla/context"
 	"source.whooplist.com/whooplist"
@@ -18,7 +18,7 @@ func GetUser(w http.ResponseWriter, req *http.Request) (code int, err error) {
 		return 400, err
 	}
 
-	user, err := whooplist.GetUserData(userId)
+	user, err := whooplist.GetUserData(userId, "")
 
 	if err != nil {
 		return 500, err
@@ -48,7 +48,7 @@ func UpdateUser(w http.ResponseWriter, req *http.Request) (code int, err error) 
 		if err != nil {
 			return 400, err
 		}
-		oldUser, err = whooplist.GetUserData(id)
+		oldUser, err = whooplist.GetUserData(id, "")
 	}
 	if err != nil {
 		return 500, err
@@ -56,13 +56,12 @@ func UpdateUser(w http.ResponseWriter, req *http.Request) (code int, err error) 
 	if oldUser == nil {
 		return 403, nil
 	}
-	if(user.Email != oldUser.Email) {
+	if user.Email != oldUser.Email {
 		return 400, nil
 	}
 
 	user.Role = oldUser.Role
 	user.PasswordHash = oldUser.PasswordHash
-
 
 	whooplist.UpdateUser(user)
 	return 0, nil
@@ -80,7 +79,10 @@ func CreateUser(w http.ResponseWriter, req *http.Request) (code int, err error) 
 		return 400, nil
 	}
 
-	if err := whooplist.CreateUser(user); err != nil {
+	//TODO: Check case where e-mail already exists.
+	//Include password strength requirements.
+	//409 conflict, 406 bad password
+	if err = whooplist.CreateUser(user); err != nil {
 		return 500, err
 	}
 	return 0, nil
@@ -106,7 +108,7 @@ func LogoutUser(w http.ResponseWriter, req *http.Request) (code int, err error) 
 	exist, err := whooplist.DeleteSession(body.Key)
 	if err != nil {
 		return 500, err
-        }
+	}
 	if !exist {
 		return 403, err
 	}
@@ -118,9 +120,9 @@ func GetUserLists(w http.ResponseWriter, req *http.Request) (code int, err error
 
 	userId, err := strconv.Atoi(req.Form.Get("UserId"))
 
-        if err != nil {
+	if err != nil {
 		return 400, err
-        }
+	}
 
 	lists, err := whooplist.GetUserLists(userId)
 	if err != nil {
@@ -134,15 +136,15 @@ func GetUserLists(w http.ResponseWriter, req *http.Request) (code int, err error
 func GetUserList(w http.ResponseWriter, req *http.Request) (code int, err error) {
 	userId, err := strconv.Atoi(req.Form.Get("UserId"))
 
-        if err != nil {
+	if err != nil {
 		return 400, err
-        }
+	}
 
 	listId, err := strconv.Atoi(req.Form.Get("ListId"))
 
-        if err != nil {
+	if err != nil {
 		return 400, nil
-        }
+	}
 
 	list, err := whooplist.GetUserList(userId, listId)
 	if err != nil {
