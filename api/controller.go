@@ -3,16 +3,13 @@ package main
 //TODO: change all Show in controller to Get
 
 import (
-	"log"
 	"strconv"
 	"net/http"
-	"github.com/gorilla/context"
 	"source.whooplist.com/whooplist"
 )
 
-func GetUser(w http.ResponseWriter, req *http.Request) (code int, err error) {
-
-	userId, err := strconv.ParseInt(req.Form.Get("UserId"), 10, 64)
+func GetUser(w http.ResponseWriter, req *http.Request, context Context) (code int, err error) {
+	userId, err := strconv.ParseInt(context.Params["UserId"], 10, 64)
 
 	if err != nil {
 		return 400, err
@@ -32,19 +29,18 @@ func GetUser(w http.ResponseWriter, req *http.Request) (code int, err error) {
 	return 0, nil
 }
 
-func UpdateUser(w http.ResponseWriter, req *http.Request) (code int, err error) {
-	body, _ := context.Get(req, Body).(*RequestBody)
-	if body == nil {
+func UpdateUser(w http.ResponseWriter, req *http.Request, context Context) (code int, err error) {
+	if context.Body == nil {
 		return 400, nil
 	}
 
-	user := body.User
+	user := context.Body.User
 
 	var oldUser *whooplist.User
 	if user.Password != "" {
 		oldUser, err = whooplist.CheckUpdateUser(user.Email, user.OldPassword)
 	} else {
-		id, err := strconv.ParseInt(req.Form.Get("UserId"), 10, 64)
+		id, err := strconv.ParseInt(context.Params["UserId"], 10, 64)
 		if err != nil {
 			return 400, err
 		}
@@ -67,13 +63,12 @@ func UpdateUser(w http.ResponseWriter, req *http.Request) (code int, err error) 
 	return 0, nil
 }
 
-func CreateUser(w http.ResponseWriter, req *http.Request) (code int, err error) {
-	log.Print("creating user")
-	body, _ := context.Get(req, Body).(*RequestBody)
-	if body == nil {
+func CreateUser(w http.ResponseWriter, req *http.Request, context Context) (code int, err error) {
+	if context.Body == nil {
 		return 400, nil
 	}
-	user := body.User
+	user := context.Body.User
+
 
 	if user.Email == "" || user.Name == "" || user.Password == "" {
 		return 400, nil
@@ -82,15 +77,17 @@ func CreateUser(w http.ResponseWriter, req *http.Request) (code int, err error) 
 	//TODO: Check case where e-mail already exists.
 	//Include password strength requirements.
 	//409 conflict, 406 bad password
-	if err = whooplist.CreateUser(user); err != nil {
+	if err = whooplist.CreateUser(&user); err != nil {
 		return 500, err
 	}
 	return 0, nil
 }
 
-func LoginUser(w http.ResponseWriter, req *http.Request) (code int, err error) {
-	body, _ := context.Get(req, Body).(*RequestBody)
-	user, session, err := whooplist.LoginUser(body.User.Email, body.User.Password)
+func LoginUser(w http.ResponseWriter, req *http.Request, context Context) (code int, err error) {
+	if context.Body == nil {
+		return 400, nil
+	}
+	user, session, err := whooplist.LoginUser(context.Body.User.Email, context.Body.User.Password)
 	if err != nil {
 		return 500, err
 	}
@@ -102,23 +99,20 @@ func LoginUser(w http.ResponseWriter, req *http.Request) (code int, err error) {
 	return
 }
 
-func LogoutUser(w http.ResponseWriter, req *http.Request) (code int, err error) {
-	body, _ := context.Get(req, Body).(*RequestBody)
-
-	exist, err := whooplist.DeleteSession(body.Key)
+func LogoutUser(w http.ResponseWriter, req *http.Request, context Context) (code int, err error) {
+	exist, err := whooplist.DeleteSession(context.Body.Key)
 	if err != nil {
 		return 500, err
 	}
 	if !exist {
-		return 403, err
+		return 403, nil
 	}
-	w.WriteHeader(200)
 	return
 }
 
-func GetUserLists(w http.ResponseWriter, req *http.Request) (code int, err error) {
+func GetUserLists(w http.ResponseWriter, req *http.Request, context Context) (code int, err error) {
 
-	userId, err := strconv.Atoi(req.Form.Get("UserId"))
+	userId, err := strconv.Atoi(context.Params["UserId"])
 
 	if err != nil {
 		return 400, err
@@ -129,18 +123,19 @@ func GetUserLists(w http.ResponseWriter, req *http.Request) (code int, err error
 		return 500, err
 	}
 
+	w.WriteHeader(200)
 	writeObject(&lists, w)
 	return
 }
 
-func GetUserList(w http.ResponseWriter, req *http.Request) (code int, err error) {
-	userId, err := strconv.Atoi(req.Form.Get("UserId"))
+func GetUserList(w http.ResponseWriter, req *http.Request, context Context) (code int, err error) {
+	userId, err := strconv.Atoi(context.Params["UserId"])
 
 	if err != nil {
 		return 400, err
 	}
 
-	listId, err := strconv.Atoi(req.Form.Get("ListId"))
+	listId, err := strconv.Atoi(context.Params["ListId"])
 
 	if err != nil {
 		return 400, nil

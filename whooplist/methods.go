@@ -7,7 +7,6 @@ import (
 	"encoding/base64"
 	_ "github.com/lib/pq"
 	"io"
-	"log"
 	"strings"
 )
 
@@ -77,7 +76,7 @@ func prepare() (err error) {
 		return
 	}
 
-/*	getUserListsStmt, err = db.Prepare(
+	getUserListsStmt, err = db.Prepare(
 		"SELECT list_id FROM public.list_item WHERE user_id = $1 " +
 			"GROUP BY list_id")
 	if err != nil {
@@ -92,17 +91,17 @@ func prepare() (err error) {
 		return
 	}
 
-	getUserListPlaceStmt, err = db.Prepare(
+	/*getUserListPlaceStmt, err = db.Prepare(
 		"SELECT place.* FROM public.list_item JOIN place " +
 			"ON list_item.place_id = place.id " +
 			"WHERE list_item.user_id = $1 AND list_item.list_id = $2 " +
 			"ORDER BY rank")
 	if err != nil {
 		return
-	}
+	}*/
 
 	putUserListStmt, err = db.Prepare(
-		"INSERT INTO public.list_item (place_id, list_id, user_id, ranking) " +
+		"INSERT INTO public.list_item (place_id, list_id, user_id, rank) " +
 			"VALUES ($1, $2, $3, $4)")
 	if err != nil {
 		return
@@ -113,7 +112,7 @@ func prepare() (err error) {
 	if err != nil {
 		return
 	}
-
+/*
 	getListTypesStmt, err = db.Prepare(
 		"SELECT * FROM public.list")
 	if err != nil {
@@ -180,10 +179,6 @@ func hash(username, password string) (hash string, err error) {
 	copy(salt[len(secretData):], []byte(strings.ToLower(username)))
 
 	hash_data, err := scrypt.Key([]byte(password), salt, 16384, 8, 1, 32)
-
-	log.Print(username)
-	log.Print(password)
-
 	hash = base64.StdEncoding.EncodeToString(hash_data)
 
 	return
@@ -222,7 +217,14 @@ func GetUserData(id int64, email string) (user *User, err error) {
 
 }
 
-func CreateUser(user User) (err error) {
+func CreateUser(user *User) (err error) {
+	if *user.Picture != "" {
+		str, err := writeFileBase64("profile.jpg", user.Picture)
+		if err != nil {
+			return err
+		}
+		user.Picture = &str
+	}
 	_, err = createUserStmt.Exec(user.Email, user.Name, user.Birthday, user.School,
 		user.Picture, user.Gender, user.PasswordHash, user.Role)
 	return
@@ -258,6 +260,14 @@ func UpdateUser(user User) (err error) {
 	} else {
 		userHash = user.PasswordHash
 	}
+
+	if *user.Picture != "" && !strings.HasPrefix(*user.Picture, "static.whooplist.com") {
+		str, err := writeFileBase64("profile.jpg", user.Picture)
+		if err != nil {
+			return err
+		}
+		user.Picture = &str
+	}
 	_, err = updateUserStmt.Exec(user.Email, user.Name, user.Birthday,
 		user.School, user.Picture, user.Gender, userHash, user.Role)
 	return
@@ -291,8 +301,6 @@ func AuthUser(key string) (user *User, session *Session, err error) {
 
 func LoginUser(username, password string) (user *User, session *Session, err error) {
 	hash, err := hash(username, password)
-
-	log.Print(hash)
 
 	if err != nil {
 		return
@@ -392,10 +400,13 @@ func GetUserList(userId, listId int) (list *UserList, err error) {
 		return
 	}
 
+	rank := 1
 	for rows.Next() {
 		var curr ListItem
-		err = rows.Scan(&curr.Id, &curr.PlaceId, &curr.ListId,
-			&curr.UserId, &curr.Ranking)
+		err = rows.Scan(&curr.PlaceId)
+		curr.Rank = rank
+		rank += 1
+
 		list.Items = append(list.Items, curr)
 		if err != nil {
 			list = nil
@@ -421,7 +432,7 @@ func PutUserList(list UserList) (err error) {
 
 	for _, item := range list.Items {
 		_, err = tx.Stmt(putUserListStmt).Exec(item.PlaceId, item.ListId,
-			item.UserId, item.Ranking)
+			item.UserId, item.Rank)
 		if err != nil {
 			tx.Rollback()
 			return

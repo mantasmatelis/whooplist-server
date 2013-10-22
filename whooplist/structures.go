@@ -60,11 +60,11 @@ type List struct {
 }
 
 type ListItem struct {
-	Id      int
+	Id      int `json:"-"`
 	PlaceId int
-	ListId  int
-	UserId  int
-	Ranking int
+	ListId  int `json:",omitempty"`
+	UserId  int `json:",omitempty"`
+	Rank    int
 }
 
 type FeedItem struct {

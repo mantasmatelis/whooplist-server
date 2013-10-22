@@ -2,21 +2,32 @@ package main
 
 import (
 	"encoding/json"
-	"github.com/gorilla/context"
 	"io/ioutil"
 	"log"
 	"net/http"
-	"net/url"
 	"runtime/debug"
 	"source.whooplist.com/route"
 	"source.whooplist.com/whooplist"
 )
 
+type loggingResponseWriter struct {
+	http.ResponseWriter
+	code *int /* This is a *int because fuck go interfaces. */
+}
+
+func (w loggingResponseWriter) WriteHeader(code int) {
+	/* By that, I mean I have to "w l..." and not " w *l..." */
+	*w.code = code
+	w.ResponseWriter.WriteHeader(code)
+}
+
 func logHandler(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		baseCode := 200
+		loggingW := loggingResponseWriter{code: &baseCode, ResponseWriter: w}
 		log.Print("Request: ", r.Method , " ", r.URL.Path)
-		handler.ServeHTTP(w, r)
-		log.Print("End request")
+		handler.ServeHTTP(loggingW, r)
+		log.Print("Response: ", *loggingW.code)
 	})
 }
 
@@ -29,7 +40,14 @@ func panicHandler(handler http.Handler) http.Handler {
 				http.Error(w, "", 500)
 			}
 		}()
-		ihandler.ServeHTTP(w, r) }) } type RequestBody struct { Key      string User     whooplist.User Place    whooplist.Place
+		handler.ServeHTTP(w, r)
+	})
+}
+
+type RequestBody struct {
+	Key      string
+	User     whooplist.User
+	Place    whooplist.Place
 	UserList whooplist.UserList
 }
 
@@ -44,9 +62,10 @@ type Server struct {
         Router route.Router
 }
 
-func (s *Server) handleRequest(w http.ResponseWriter, r *http.Request)
-	var Context context
-	context.Body, err := readRequest(r)
+func (s *Server) handleRequest(w http.ResponseWriter, r *http.Request) {
+	var context Context
+	var err error
+	context.Body, err = readRequest(r)
 	if err != nil {
 		log.Print("Error parsing request: " + err.Error())
 		http.Error(w, "", 400)
@@ -54,7 +73,7 @@ func (s *Server) handleRequest(w http.ResponseWriter, r *http.Request)
 	}
 
 	if context.Body != nil && context.Body.Key != "" {
-		context.User, context.Session, err := whooplist.AuthUser(context.Body.Key)
+		context.User, context.Session, err = whooplist.AuthUser(context.Body.Key)
 	}
 	if err != nil {
 		log.Print("Error authenticating user: " + err.Error())
@@ -74,35 +93,15 @@ func (s *Server) handleRequest(w http.ResponseWriter, r *http.Request)
 
 	context.Params = params
 
-	code, err = route.Func.(func(http.ResponseWriter, *http.Request, Context)
-		(int, error))(w, r, params)
+	code, err := route.Func.(func(http.ResponseWriter, *http.Request,
+		Context) (int, error))(w, r, context)
 
 	if code != 0 {
 		http.Error(w, "", code)
 		if err != nil {
-			log.Print("Error  handling request: ", err.Error())
+			log.Print("Error handling request: ", err.Error())
 		}
 	}
-}
-
-type key int
-
-const Body key = 0
-const User key = 1
-const Session key = 2
-
-//TODO: Merge paseRequest, readRequest, authenticate, auth, errorHandler, handleRequest so that gorilla/context gone
-
-func parseRequest(handler http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		body, err := readRequest(r)
-		if err == nil {
-			context.Set(r, Body, body)
-		} else {
-			log.Print("Error parsing request: " + err.Error())
-		}
-		handler.ServeHTTP(w, r)
-	})
 }
 
 func readRequest(req *http.Request) (body *RequestBody, err error) {
@@ -117,58 +116,6 @@ func readRequest(req *http.Request) (body *RequestBody, err error) {
 	log.Print(body)
 
 	return
-}
-
-func authenticate(handler http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		auth(r)
-		handler.ServeHTTP(w, r)
-	})
-}
-
-func auth(r *http.Request) {
-	body, _ := context.Get(r, Body).(*RequestBody)
-	if body != nil && body.Key != "" {
-		user, session, _ := whooplist.AuthUser(body.Key)
-		context.Set(r, User, user)
-		context.Set(r, Session, session)
-	}
-}
-
-func errorHandler(f func(http.ResponseWriter, *http.Request) (int, error)) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		code, err := f(w, r)
-		if code != 0 {
-			http.Error(w, "", code)
-			if err != nil {
-				log.Print("Error  handling request: ", err.Error())
-			}
-		}
-	})
-}
-
-type Server struct {
-	Router route.Router
-}
-
-func (s *Server) handleRequest(w http.ResponseWriter, r *http.Request) (code int, err error) {
-	route, params, pathMatched := s.Router.FindRouteFromURL(r.Method, r.URL)
-	if route == nil && pathMatched {
-		http.Error(w, "", 405)
-		return
-	}
-	if route == nil {
-		http.Error(w, "", 400)
-		return
-	}
-
-	r.Form = url.Values{}
-	for key, value := range params {
-
-		r.Form.Set(key, value)
-	}
-
-	return route.Func.(func(http.ResponseWriter, *http.Request) (int, error))(w, r)
 }
 
 func writeObject(obj interface{}, w http.ResponseWriter) (err error) {

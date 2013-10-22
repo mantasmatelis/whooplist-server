@@ -5,7 +5,6 @@ import (
 	"os"
 	"log"
 	"net/http"
-	"github.com/gorilla/context"
 	"source.whooplist.com/route"
 	"source.whooplist.com/whooplist"
 )
@@ -57,7 +56,6 @@ func main() {
 		route.Route{"GET", "/listTypes", GetListTypes},
 
 		/* Whooplist Routes */
-		route.Route{"GET", "/whooplist/:Day/:Time", GetWhooplists},
 		route.Route{"GET", "/whooplist/:ListId/:Page/coordinate/:Lat/:Long/:Radius", GetWhooplistCoordinate},
 		route.Route{"GET", "/whooplist/:ListId/:Page/location/:LocationId", GetWhooplistLocation},
 
@@ -76,13 +74,7 @@ func main() {
 	s := &Server{Router: router}
 	hs := &http.Server{
 		Addr: ":3000",
-		Handler: context.ClearHandler(
-			logHandler(
-				panicHandler(
-					parseRequest(
-						authenticate(
-							errorHandler(
-								s.handleRequest)))))),
+		Handler: logHandler(panicHandler(http.HandlerFunc(s.handleRequest))),
 	}
 	log.Fatal(hs.ListenAndServe())
 }
