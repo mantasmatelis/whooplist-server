@@ -23,12 +23,8 @@ type User struct {
 }
 
 /* Sessions offer long-term authenticated communication between server and client.
-
 Identity is proved with a long key (that must be kept absolutely secret at all times).
-
-Sessions are signed out after 28 days of inactivity (not making requests under the key) for security.
-
-*/
+Sessions are signed out after 28 days of inactivity (not making requests under the key) for security. */
 type Session struct {
 	Id       int64
 	UserId   int64
@@ -40,12 +36,21 @@ type Session struct {
 /**/
 type Place struct {
 	Id        int64
+
 	Latitude  float64
 	Longitude float64
-	TomTomId  string
+
+	FactualId string
+
 	Name      string
 	Address   string
-	Phone     string
+	Locality  string
+	Region    string
+	Postcode  string
+	Country   string
+	Tel       string
+	Website   string
+	Email     string
 }
 
 type Location struct {
@@ -54,9 +59,10 @@ type Location struct {
 }
 
 type List struct {
-	Id   int
+	Id   int64
 	Name string
-	Icon *byte
+	Icon string
+	Children []int64
 }
 
 type ListItem struct {
@@ -68,21 +74,27 @@ type ListItem struct {
 }
 
 type FeedItem struct {
+	/* General Items */
 	Id         int
-	UserId     int /* User-specific (e.g. your friend Jitesh id 3) or 0 for relevant to all */
+	Timestamp  time.Time
+
+	/* The following group of items do not all have to be present and may be 0 */
+	UserId     int
 	LocationId int
 	PlaceId    int
 	ListId     int
-	Timestamp  time.Time
 	Picture    string
 
-	/* Has only one of the following groups */
-	IsNewInList bool /* Can be friend-specific or afriend-specific */
-	Position    int
-
-	IsTrending bool /* Afriend-specific */
-
-	IsVisiting bool /* Friend-specific */
+	/* Type Describes what the Newsfeed event is
+	 * (No UserId) 1: Trending, 2: NewInWhooplist (AuxInt: Position)
+	 *    (UserId) 3: Welcome, 4: WhyNotAdd, 5: NewInUserlist (AuxInt: Position),
+	 *         ... 6: Visiting 7: ProfilePictureUpdated,
+	 *         ... 8: School Updated (AuxString: Name),
+	 *         ... 9: FriendAdded (AuxInt: Id, AuxString: Name)
+	 */
+	Type      int64
+	AuxString string
+	AuxInt    int64
 }
 
 /* The following four structures are not database tables and are for convenience purposes only */

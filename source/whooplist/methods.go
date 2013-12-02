@@ -8,6 +8,7 @@ import (
 	_ "github.com/lib/pq"
 	"io"
 	"strings"
+	"strconv"
 )
 
 /* Application global database connection pool */
@@ -15,10 +16,11 @@ var db *sql.DB
 
 var getUserDataStmt, createUserStmt, updateUserStmt, deleteUserStmt,
 	authUserStmt, loginUserVerifyStmt, loginUserStmt,
-	deleteSessionStmt, getUserListsStmt, getUserListStmt, getUserListPlaceStmt,
-	putUserListStmt, deleteUserListStmt, getListTypesStmt,
-	getWhooplistCoordinateStmt, getWhooplistLocationStmt, getLocationStmt,
-	getLocationCoordinateStmt, getPlaceStmt *sql.Stmt
+	deleteSessionStmt, existsUserStmt, getUserListsStmt, getUserListStmt,
+	getUserListPlaceStmt, putUserListStmt, deleteUserListStmt, getListTypesStmt,
+	getWhooplistCoordinateStmt, getWhooplistLocationStmt,
+	addNewsfeedItemStmt, getNewsfeedStmt, getNewsfeedEarlierStmt,
+	getLocationStmt, getLocationCoordinateStmt, getPlaceStmt *sql.Stmt
 
 func prepare() (err error) {
 	getUserDataStmt, err = db.Prepare(
@@ -72,6 +74,12 @@ func prepare() (err error) {
 
 	deleteSessionStmt, err = db.Prepare(
 		"DELETE FROM public.session WHERE key = $1;")
+	if err != nil {
+		return
+	}
+
+	existsUserStmt, err = db.Prepare(
+		"SELECT id FROM public.user WHERE email= $1;")
 	if err != nil {
 		return
 	}
@@ -146,7 +154,34 @@ func prepare() (err error) {
 			"LIMIT 10 " +
 			"OFFSET ? ")
 		if err != nil { return; }
+*/
 
+	/*addNewsfeedItemStmt, err = db.Prepare(
+		"INSERT INTO newsfeed_item (user_id, location_id, place_id, list_id " +
+		"timestamp, picture, is_new_in_list, position, is_trending, is_visiting, " +
+		"profile_picture_updated, school_updated, school) VALUES ($1, $2, $3, $4 " + 
+		"$5, $6, $7, $8, $9, $10, $11, $12, $13)")
+	if err != nil {
+		return
+	}
+
+	getNewsfeedStmt, err = db.Prepare(
+		"SELECT user_id, location_id, place_id, list_id, timestamp, picture, is_new_in_list " +
+		"position, is_trending, is_visiting, profile_picture_updated FROM newsfeed_item " +
+		"WHERE (location_id = $1 OR user_id = $3) AND latest_id > $2 LIMIT 30")
+	if err != nil {
+		return
+	}
+
+	getNewsfeedEarlierStmt, err = db.Prepare(
+		"SELECT user_id, location_id, place_id, list_id, timestamp, picture, is_new_in_list " +
+                "position, is_trending, is_visiting, profile_picture_updated FROM newsfeed_item " +
+	        "WHERE (location_id = $1 OR user_id = $3) AND latest_id < $2 LIMIT 30")
+	if err != nil {
+		return
+	}*/
+
+/*
 		getLocationStmt, err = db.Prepare(
 			"SELECT * FROM location WHERE id = ?")
 		if err != nil { return; }
@@ -157,15 +192,42 @@ func prepare() (err error) {
 			"|/ ((centre_lat - ?) ^ 2 + (centre_long - ?))" +
 			"")
 		if err != nil { return; }
+*/
+	getPlaceStmt, err = db.Prepare(
+		"SELECT * FROM place WHERE id = $1")
+	if err != nil {
+		return
+	}
 
-		getPlaceStmt, err = db.Prepare(
-			"SELECT * FROM place WHERE id = ?")
-		if err != nil { return; }
-	*/
+	getPlaceByFactualStmt, err = db.Prepare(
+		"SELECT * FROM place WHERE factual_id = $1")
+	if err != nil {
+		return
+	}
+
+	updatePlaceStmt, err = db.Prepare(
+		"UPDATE place SET latitude=$1, longitude=$2, factual_id=$3, name=$4 " +
+		"address=$5, locality=$6, region=$7, postcode=$8, country=$9, tel=$10, "
+		"website=$11, email=$12 WHERE factual_id=$3 " +
+		"RETURNING id;")
+	if err != nil {
+		return
+	}
+
+	addPlaceStmt, err = db.Prepare(
+		"INSERT INTO place (latitude, longitude, factual_id, name, address " +
+		"locality, region, postcode, country, tel, website, email) " +
+		"VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) " +
+		"WHERE NOT EXISTS (SELECT 1 FROM place WHERE factual_id=$3" +
+		"RETURNING id;")
+	if err != nil {
+		return
+	}
+
 	return
 }
 
-func hash(username, password string) (hash string, err error) {
+func Hash(username, password string) (hash string, err error) {
 	secret := "aYdZYlE9ybGXn5CldvQ3f/shKxNshtAOvqDlaw/wbUBHwc5r9zBal9hf9CDkGxSgddAMtNm+uz1G"
 	secretData, err := base64.StdEncoding.DecodeString(secret)
 
@@ -218,8 +280,8 @@ func GetUserData(id int64, email string) (user *User, err error) {
 }
 
 func CreateUser(user *User) (err error) {
-	if *user.Picture != "" {
-		str, err := writeFileBase64("profile.jpg", user.Picture)
+	if user.Picture != nil {
+		str, err := WriteFileBase64("profile.jpg", user.Picture, false)
 		if err != nil {
 			return err
 		}
@@ -231,7 +293,7 @@ func CreateUser(user *User) (err error) {
 }
 
 func CheckUpdateUser(email, password string) (user *User, err error) {
-	hash, err := hash(email, password)
+	hash, err := Hash(email, password)
 
 	if err != nil {
 		return
@@ -256,13 +318,13 @@ func CheckUpdateUser(email, password string) (user *User, err error) {
 func UpdateUser(user User) (err error) {
 	var userHash string
 	if user.Password != "" {
-		userHash, _ = hash(user.Email, user.Password)
+		userHash, _ = Hash(user.Email, user.Password)
 	} else {
 		userHash = user.PasswordHash
 	}
 
-	if *user.Picture != "" && !strings.HasPrefix(*user.Picture, "static.whooplist.com") {
-		str, err := writeFileBase64("profile.jpg", user.Picture)
+	if user.Picture != nil && !strings.HasPrefix(*user.Picture, "static.whooplist.com") {
+		str, err := WriteFileBase64("profile.jpg", user.Picture, false)
 		if err != nil {
 			return err
 		}
@@ -282,8 +344,7 @@ func DeleteUser(userId int64) (err error) {
 func AuthUser(key string) (user *User, session *Session, err error) {
 	res := authUserStmt.QueryRow(key)
 	session = new(Session)
-	err = res.Scan(&session.Id, &session.UserId, &session.Key,
-		&session.LastAuth, &session.LastUse)
+	err = res.Scan(&session.Id, &session.UserId, &session.Key)
 
 	if err == sql.ErrNoRows {
 		session = nil
@@ -300,7 +361,7 @@ func AuthUser(key string) (user *User, session *Session, err error) {
 }
 
 func LoginUser(username, password string) (user *User, session *Session, err error) {
-	hash, err := hash(username, password)
+	hash, err := Hash(username, password)
 
 	if err != nil {
 		return
@@ -349,6 +410,17 @@ func LoginUser(username, password string) (user *User, session *Session, err err
 
 func DeleteSession(key string) (exist bool, err error) {
 	res, err := deleteSessionStmt.Exec(key)
+	if err == nil {
+		rows, _ := res.RowsAffected()
+		if rows == 1 {
+			exist = true
+		}
+	}
+	return
+}
+
+func UserExists(email string) (exist bool, err error) {
+	res, err := existsUserStmt.Exec(email)
 	if err == nil {
 		rows, _ := res.RowsAffected()
 		if rows == 1 {
@@ -450,7 +522,7 @@ func DeleteUserList(userId, listId int) (err error) {
 }
 
 func GetListTypes() (lists []List, err error) {
-	lists = make([]List, 0, 20) //TODO: set capacity proper
+	lists = make([]List, 0, 24)
 	rows, err := getListTypesStmt.Query()
 
 	if err != nil {
@@ -460,7 +532,20 @@ func GetListTypes() (lists []List, err error) {
 
 	for rows.Next() {
 		var curr List
-		err = rows.Scan(&curr.Id, &curr.Name, &curr.Icon)
+		var children string
+		err = rows.Scan(&curr.Id, &curr.Name, &curr.Icon, children)
+
+		if children != "" {
+			childrenSlice := strings.Split(children, ",")
+			curr.Children = make([]int64, len(childrenSlice))
+			for key, child := range childrenSlice {
+				curr.Children[key], err = strconv.ParseInt(child, 10, 64)
+				if err != nil {
+					return nil, err
+				}
+			}
+		}
+
 		lists = append(lists, curr)
 		if err != nil {
 			lists = nil
@@ -479,6 +564,40 @@ func GetWhooplistCoordinate(userId int, listId int, page int,
 func GetWhooplistLocation(userId int, listId int, page int,
 	locationId int) (list *WhooplistLocation, err error) {
 	//TODO: Implement
+	return
+}
+
+func AddNewsfeedItem(item *FeedItem) (err error) {
+	_, err = addNewsfeedItemStmt.Query(&item.UserId, &item.LocationId, &item.PlaceId,
+		&item.ListId, &item.Picture, &item.Type, &item.AuxString, &item.AuxInt)
+	return
+}
+
+func GetNewsfeed(location, latest_id, user_id int64) (items []FeedItem, err error) {
+	return getNewsfeed(getNewsfeedStmt.Query(location, latest_id, user_id))
+}
+
+func GetNewsfeedEarlier(location, earliest_id, user_id int64) (items []FeedItem, err error) {
+	return getNewsfeed(getNewsfeedEarlierStmt.Query(location, earliest_id, user_id))
+}
+
+func getNewsfeed(rows *sql.Rows, inErr error) (items []FeedItem, err error) {
+	if inErr != nil {
+		return
+	}
+
+	items = make([]FeedItem, 0, 30)
+
+	for rows.Next() {
+		var item FeedItem
+		err = rows.Scan(&item.Timestamp, &item.UserId, &item.LocationId, &item.PlaceId,
+			&item.ListId, &item.Picture, &item.Type, &item.AuxString, &item.AuxInt)
+		items = append(items, item)
+		if err != nil {
+			items = nil
+			return
+		}
+	}
 	return
 }
 
@@ -505,12 +624,31 @@ func GetPlace(placeId int) (place *Place, err error) {
 
 	res := getPlaceStmt.QueryRow(placeId)
 	err = res.Scan(&place.Id, &place.Latitude, &place.Longitude,
-		&place.TomTomId, &place.Name,
-		&place.Address, &place.Phone)
+		&place.FactualId, &place.Name, &place.Address, &place.Locality,
+		&place.Region, &place.Postcode, &place.Country,
+		&place.Tel, &place.Website, &place.Email)
 
 	if err != nil {
 		place = nil
 	}
 
+	return
+}
+
+func SearchPlace(listId int64, lat, long float64, str string) (places []Place, err error) {
+	return
+}
+
+func storePlace(factualId string) (placeId int64, err error) {
+
+
+
+	res := addPlaceStmt.QueryRow(...)
+
+	err = res.Scan(&placeId)
+
+	if err != nil {
+		placeId = 0
+	}
 	return
 }

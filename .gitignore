@@ -1,4 +1,5 @@
 *.sw*
-api/api
-api/api.log
-user_hash/user_hash
+source/api/api
+source/api/api.log
+source/user_hash/user_hash
+backups/*

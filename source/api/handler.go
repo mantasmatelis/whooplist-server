@@ -6,8 +6,8 @@ import (
 	"log"
 	"net/http"
 	"runtime/debug"
-	"source.whooplist.com/route"
-	"source.whooplist.com/whooplist"
+	"github.com/mantasmatelis/go-trie-url-route"
+	"../whooplist"
 )
 
 type loggingResponseWriter struct {

@@ -5,8 +5,15 @@ package main
 import (
 	"strconv"
 	"net/http"
-	"source.whooplist.com/whooplist"
+	"../whooplist"
 )
+
+func Ping(w http.ResponseWriter, req *http.Request, context Context) (code int, err error) {
+	if context.Session != nil {
+		return 200, nil
+	}
+	return 403, nil
+}
 
 func GetUser(w http.ResponseWriter, req *http.Request, context Context) (code int, err error) {
 	userId, err := strconv.ParseInt(context.Params["UserId"], 10, 64)
@@ -33,18 +40,18 @@ func UpdateUser(w http.ResponseWriter, req *http.Request, context Context) (code
 	if context.Body == nil {
 		return 400, nil
 	}
-
 	user := context.Body.User
+
+	if context.Session == nil {
+		return 400, nil
+	}
+	user.Id = context.Session.UserId
 
 	var oldUser *whooplist.User
 	if user.Password != "" {
 		oldUser, err = whooplist.CheckUpdateUser(user.Email, user.OldPassword)
 	} else {
-		id, err := strconv.ParseInt(context.Params["UserId"], 10, 64)
-		if err != nil {
-			return 400, err
-		}
-		oldUser, err = whooplist.GetUserData(id, "")
+		oldUser, err = whooplist.GetUserData(context.Session.UserId, "")
 	}
 	if err != nil {
 		return 500, err
@@ -52,7 +59,7 @@ func UpdateUser(w http.ResponseWriter, req *http.Request, context Context) (code
 	if oldUser == nil {
 		return 403, nil
 	}
-	if user.Email != oldUser.Email {
+	if user.Email != oldUser.Email || user.Id != oldUser.Id {
 		return 400, nil
 	}
 
@@ -110,6 +117,21 @@ func LogoutUser(w http.ResponseWriter, req *http.Request, context Context) (code
 	return
 }
 
+func ExistsUser(w http.ResponseWriter, req *http.Request, context Context) (code int, err error) {
+	if context.Params["Email"] == "" {
+		return 400, nil
+	}
+	exist, err := whooplist.UserExists(context.Params["Email"])
+
+	if err != nil {
+		return 500, err 
+	} else if exist {
+		return 200, nil
+	} else {
+		return 404, nil
+	}
+}
+
 func GetUserLists(w http.ResponseWriter, req *http.Request, context Context) (code int, err error) {
 
 	userId, err := strconv.Atoi(context.Params["UserId"])
@@ -136,7 +158,6 @@ func GetUserList(w http.ResponseWriter, req *http.Request, context Context) (cod
 	}
 
 	listId, err := strconv.Atoi(context.Params["ListId"])
-
 	if err != nil {
 		return 400, nil
 	}
@@ -162,9 +183,6 @@ func DeleteUserList(w http.ResponseWriter, req *http.Request) {
 func GetListTypes(w http.ResponseWriter, req *http.Request) {
 }
 
-func GetWhooplists(w http.ResponseWriter, req *http.Request) {
-}
-
 func GetWhooplistCoordinate(w http.ResponseWriter, req *http.Request) {
 }
 
@@ -183,5 +201,41 @@ func GetLocation(w http.ResponseWriter, req *http.Request) {
 func GetLocationsCoordinate(w http.ResponseWriter, req *http.Request) {
 }
 
-func GetPlace(w http.ResponseWriter, req *http.Request) {
+func GetPlace(w http.ResponseWriter, req *http.Request, context Context) (code int, err error) {
+	placeId, err := strconv.Atoi(context.Params["PlaceId"])
+	if err != nil {
+		return 400, nil
+	}
+	place, err := whooplist.GetPlace(placeId)
+	if err != nil {
+		return 500, err
+	}
+
+	writeObject(&place, w)
+	return
+}
+
+func SearchPlace(w http.ResponseWriter, req *http.Request, context Context) (code int, err error) {
+	listId, err := strconv.ParseInt(context.Params["ListId"], 10, 64)
+	if err != nil {
+		return 400, nil
+	}
+
+	lat, err := strconv.ParseFloat(context.Params["Lat"], 64)
+	if err != nil {
+		return 400, nil
+	}
+
+	long, err := strconv.ParseFloat(context.Params["Long"], 64)
+	if err != nil {
+		return 400, nil
+	}
+
+	places, err := whooplist.SearchPlace(listId, lat, long, context.Params["SearchString"])
+	if err != nil {
+		return 500, err
+	}
+
+	writeObject(&places, w)
+	return
 }
