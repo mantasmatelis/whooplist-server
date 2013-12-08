@@ -1,0 +1,488 @@
+{
+	"auto_complete":
+	{
+		"selected_items":
+		[
+			[
+				"err",
+				"err"
+			],
+			[
+				"getPlace",
+				"getPlaceByFactualStmt"
+			]
+		]
+	},
+	"buffers":
+	[
+		{
+			"file": "source/whooplist/methods.go",
+			"settings":
+			{
+				"buffer_size": 16186,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "source/whooplist/factual.go",
+			"settings":
+			{
+				"buffer_size": 1567,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "source/utilities/api-test/factual.go",
+			"settings":
+			{
+				"buffer_size": 3091,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "/Users/mantas/Library/Application Support/Sublime Text 3/Packages/GoSublime/USAGE.md",
+			"settings":
+			{
+				"buffer_size": 8539,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "source/api/controller.go",
+			"settings":
+			{
+				"buffer_size": 5915,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "source/whooplist/structures.go",
+			"settings":
+			{
+				"buffer_size": 2579,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "source/api/application.go",
+			"settings":
+			{
+				"buffer_size": 2230,
+				"line_ending": "Unix"
+			}
+		}
+	],
+	"build_system": "",
+	"command_palette":
+	{
+		"height": 347.0,
+		"selected_items":
+		[
+			[
+				"packa",
+				"Package Control: Install Package"
+			],
+			[
+				"Package ",
+				"Package Control: Install Package"
+			],
+			[
+				":w",
+				":w - Save"
+			],
+			[
+				":",
+				":w - Save"
+			]
+		],
+		"width": 449.0
+	},
+	"console":
+	{
+		"height": 120.0,
+		"history":
+		[
+			"import urllib.request,os; pf = 'Package Control.sublime-package'; ipp = sublime.installed_packages_path(); urllib.request.install_opener( urllib.request.build_opener( urllib.request.ProxyHandler()) ); open(os.path.join(ipp, pf), 'wb').write(urllib.request.urlopen( 'http://sublime.wbond.net/' + pf.replace(' ','%20')).read())"
+		]
+	},
+	"distraction_free":
+	{
+		"menu_visible": true,
+		"show_minimap": false,
+		"show_open_files": false,
+		"show_tabs": false,
+		"side_bar_visible": false,
+		"status_bar_visible": false
+	},
+	"file_history":
+	[
+		"/Users/mantas/Library/Application Support/Sublime Text 3/Packages/GoSublime/CHANGELOG.md",
+		"/Users/mantas/Documents/whooplist/source/whooplist/structures.go",
+		"/Users/mantas/Documents/whooplist/source/api/handler.go",
+		"/Users/mantas/Documents/whooplist/source/api/file.go",
+		"/Users/mantas/Documents/whooplist/source/api/api.log",
+		"/Users/mantas/Documents/whooplist/sql/base.sql",
+		"/Users/mantas/Documents/whooplist/source/whooplist/.sublime-project",
+		"/Users/mantas/Documents/whooplist/go.sublime-build.json",
+		"/Users/mantas/Documents/whooplist/.sublime-build.json",
+		"/Users/mantas/Documents/whooplist/assets/list_icons/24hr.svg"
+	],
+	"find":
+	{
+		"height": 22.0
+	},
+	"find_in_files":
+	{
+		"height": 0.0,
+		"where_history":
+		[
+		]
+	},
+	"find_state":
+	{
+		"case_sensitive": false,
+		"find_history":
+		[
+			"\n}",
+			"er"
+		],
+		"highlight": true,
+		"in_selection": false,
+		"preserve_case": false,
+		"regex": false,
+		"replace_history":
+		[
+		],
+		"reverse": false,
+		"show_context": true,
+		"use_buffer2": true,
+		"whole_word": false,
+		"wrap": true
+	},
+	"groups":
+	[
+		{
+			"selected": 3,
+			"sheets":
+			[
+				{
+					"buffer": 0,
+					"file": "source/whooplist/methods.go",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 16186,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								8145,
+								8145
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Go/Go.tmLanguage",
+							"translate_tabs_to_spaces": false,
+							"word_wrap": true,
+							"wrap_width": 80
+						},
+						"translation.x": 0.0,
+						"translation.y": 9268.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 1,
+					"file": "source/whooplist/factual.go",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 1567,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								518,
+								1567
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Go/Go.tmLanguage",
+							"word_wrap": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 322.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 2,
+					"file": "source/utilities/api-test/factual.go",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 3091,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								2281,
+								2281
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Go/Go.tmLanguage",
+							"word_wrap": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 1027.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 3,
+					"file": "/Users/mantas/Library/Application Support/Sublime Text 3/Packages/GoSublime/USAGE.md",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 8539,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								829,
+								829
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Markdown/Markdown.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 240.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				}
+			]
+		},
+		{
+			"selected": 0,
+			"sheets":
+			[
+				{
+					"buffer": 4,
+					"file": "source/api/controller.go",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 5915,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								5305,
+								5305
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Go/Go.tmLanguage",
+							"translate_tabs_to_spaces": false,
+							"word_wrap": true,
+							"wrap_width": 80
+						},
+						"translation.x": 0.0,
+						"translation.y": 3298.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				}
+			]
+		},
+		{
+			"selected": 0,
+			"sheets":
+			[
+				{
+					"buffer": 5,
+					"file": "source/whooplist/structures.go",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 2579,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								1075,
+								1075
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Go/Go.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 501.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				}
+			]
+		},
+		{
+			"selected": 0,
+			"sheets":
+			[
+				{
+					"buffer": 6,
+					"file": "source/api/application.go",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 2230,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								1279,
+								1279
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Go/Go.tmLanguage",
+							"translate_tabs_to_spaces": false,
+							"word_wrap": true,
+							"wrap_width": 80
+						},
+						"translation.x": 0.0,
+						"translation.y": 598.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				}
+			]
+		}
+	],
+	"incremental_find":
+	{
+		"height": 34.0
+	},
+	"input":
+	{
+		"height": 30.0
+	},
+	"layout":
+	{
+		"cells":
+		[
+			[
+				0,
+				0,
+				1,
+				1
+			],
+			[
+				1,
+				0,
+				2,
+				1
+			],
+			[
+				0,
+				1,
+				1,
+				2
+			],
+			[
+				1,
+				1,
+				2,
+				2
+			]
+		],
+		"cols":
+		[
+			0.0,
+			0.464123430271,
+			1.0
+		],
+		"rows":
+		[
+			0.0,
+			0.637383051171,
+			1.0
+		]
+	},
+	"menu_visible": true,
+	"output.MarGo-output":
+	{
+		"height": 94.0
+	},
+	"project": "whooplist.sublime-project",
+	"replace":
+	{
+		"height": 40.0
+	},
+	"save_all_on_build": true,
+	"select_file":
+	{
+		"height": 0.0,
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"select_project":
+	{
+		"height": 0.0,
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"select_symbol":
+	{
+		"height": 0.0,
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"settings":
+	{
+	},
+	"show_minimap": true,
+	"show_open_files": false,
+	"show_tabs": true,
+	"side_bar_visible": true,
+	"side_bar_width": 125.0,
+	"status_bar_visible": true,
+	"template_settings":
+	{
+	}
+}

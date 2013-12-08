@@ -7,8 +7,8 @@ import (
 	"encoding/base64"
 	_ "github.com/lib/pq"
 	"io"
-	"strings"
 	"strconv"
+	"strings"
 )
 
 /* Application global database connection pool */
@@ -17,116 +17,131 @@ var db *sql.DB
 var getUserDataStmt, createUserStmt, updateUserStmt, deleteUserStmt,
 	authUserStmt, loginUserVerifyStmt, loginUserStmt,
 	deleteSessionStmt, existsUserStmt, getUserListsStmt, getUserListStmt,
-	getUserListPlaceStmt, putUserListStmt, deleteUserListStmt, getListTypesStmt,
-	getWhooplistCoordinateStmt, getWhooplistLocationStmt,
+	getUserListPlaceStmt, putUserListStmt, deleteUserListStmt,
+	getListTypesStmt, getWhooplistCoordinateStmt, getWhooplistLocationStmt,
 	addNewsfeedItemStmt, getNewsfeedStmt, getNewsfeedEarlierStmt,
-	getLocationStmt, getLocationCoordinateStmt, getPlaceStmt *sql.Stmt
+	getLocationStmt, getLocationCoordinateStmt, getPlaceStmt,
+	getPlaceByFactualStmt, addPlaceStmt, updatePlaceStmt *sql.Stmt
 
 func prepare() (err error) {
 	getUserDataStmt, err = db.Prepare(
-		"SELECT id, email, name, birthday, school, picture, gender, password_hash, role " +
-			"FROM public.user WHERE id = $1 OR email = $2;")
+		"SELECT id, email, name, fname, lname, birthday, " +
+			"school, picture, gender, password_hash, role " +
+			"FROM wl.user WHERE id = $1 OR email = $2;")
 	if err != nil {
 		return
 	}
 
 	createUserStmt, err = db.Prepare(
-		"INSERT INTO public.user (email, name, birthday, school, picture, " +
-			"gender, password_hash, role) " +
-			"VALUES ($1, $2, $3, $4, $5, $6, $7, $8);")
+		"INSERT INTO wl.user (email, name, fname, lname, birthday, " +
+			"school, picture, gender, password_hash, role) " +
+			"VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10);")
 	if err != nil {
 		return
 	}
 
 	updateUserStmt, err = db.Prepare(
-		"UPDATE public.user SET name = $2, birthday = $3, school = $4, " +
-			"picture = $5, gender = $6,  password_hash = $7, " +
-			"role = $8 WHERE email = $1;")
+		"UPDATE wl.user SET name = $2, fname = $3, lname = $4,  birthday = $5, school = $6, " +
+			"picture = $7, gender = $8,  password_hash = $9, " +
+			"role = $10 WHERE email = $1;")
 	if err != nil {
 		return
 	}
 
 	deleteUserStmt, err = db.Prepare(
-		"DELETE FROM public.user WHERE id = $1;")
+		"DELETE FROM wl.user WHERE id = $1;")
 	if err != nil {
 		return
 	}
 
 	authUserStmt, err = db.Prepare(
-		"SELECT * FROM public.session WHERE key = $1;")
+		"SELECT * FROM wl.session WHERE key = $1;")
 	if err != nil {
 		return
 	}
 
 	loginUserVerifyStmt, err = db.Prepare(
-		"SELECT id, email, name, birthday, school, picture, gender, role " +
-			"FROM public.user WHERE email = $1 AND password_hash = $2;")
+		"SELECT id, email, name, fname, lname, birthday, school, picture, gender, role " +
+			"FROM wl.user WHERE email = $1 AND password_hash = $2;")
 	if err != nil {
 		return
 	}
 
 	loginUserStmt, err = db.Prepare(
-		"INSERT INTO public.session (user_id, key) " +
-			"VALUES ($1, $2);")
+		"INSERT INTO wl.session (user_id, key, last_auth, last_use) " +
+			"VALUES ($1, $2, NOW(), NOW());")
 	if err != nil {
 		return
 	}
 
 	deleteSessionStmt, err = db.Prepare(
-		"DELETE FROM public.session WHERE key = $1;")
+		"DELETE FROM wl.session WHERE key = $1;")
 	if err != nil {
 		return
 	}
 
 	existsUserStmt, err = db.Prepare(
-		"SELECT id FROM public.user WHERE email= $1;")
+		"SELECT id FROM wl.user WHERE lower(email)= $1;")
 	if err != nil {
 		return
 	}
 
 	getUserListsStmt, err = db.Prepare(
-		"SELECT list_id FROM public.list_item WHERE user_id = $1 " +
-			"GROUP BY list_id")
+		"SELECT list_id FROM wl.list_item WHERE user_id = $1 " +
+			"GROUP BY list_id;")
 	if err != nil {
 		return
 	}
 
 	getUserListStmt, err = db.Prepare(
-		"SELECT place_id FROM public.list_item " +
+		"SELECT place_id FROM wl.list_item " +
 			"WHERE user_id = $1 AND list_id = $2 " +
 			"ORDER BY rank")
 	if err != nil {
 		return
 	}
 
-	/*getUserListPlaceStmt, err = db.Prepare(
-		"SELECT place.* FROM public.list_item JOIN place " +
+	getUserListPlaceStmt, err = db.Prepare(
+		"SELECT place.id, place.latitude, place.longitude, place.factual_id, place.name, " +
+			"place.address, place.locality, place.region, place.postcode, place.country, " +
+			"place.telephone, place.website, place.email " +
+			"FROM wl.list_item JOIN wl.place " +
 			"ON list_item.place_id = place.id " +
 			"WHERE list_item.user_id = $1 AND list_item.list_id = $2 " +
 			"ORDER BY rank")
 	if err != nil {
 		return
-	}*/
+	}
 
 	putUserListStmt, err = db.Prepare(
-		"INSERT INTO public.list_item (place_id, list_id, user_id, rank) " +
+		"INSERT INTO wl.list_item (place_id, list_id, user_id, rank) " +
 			"VALUES ($1, $2, $3, $4)")
 	if err != nil {
 		return
 	}
 
 	deleteUserListStmt, err = db.Prepare(
-		"DELETE FROM public.list_item WHERE user_id = $1 AND list_id = $2")
+		"DELETE FROM wl.list_item WHERE user_id = $1 AND list_id = $2")
 	if err != nil {
 		return
 	}
-/*
+
 	getListTypesStmt, err = db.Prepare(
-		"SELECT * FROM public.list")
+		"SELECT * FROM wl.list")
 	if err != nil {
 		return
 	}
-*/
+	/*
+	   	getWhooplistStmt, err = db.Prepare(
+	   		"SELECT score, place.id, place.latitude, place.longitude, place.factual_id, place.name, " +
+	                           "place.address, place.locality, place.region, place.postcode, place.country, " +
+	                           "place.telephone, place.website, place.email " +
+	   			"FROM whooplist_item JOIN place " +
+	   			"ON whooplist_item.place_id = place.id " +
+	   			"WHERE whooplist_item.list_id = $1 AND " +
+	   			"((place.lat - $2)^2 + (place.long - $3)^2) < ($4 * $4)
+	   	);
+	*/
 	/*	   	//TODO: fix to coordinate
 		getWhooplistCoordinateStmt, err = db.Prepare(
 			"SELECT place.id AS place_id, SUM(10 - rank) AS score " +
@@ -154,34 +169,34 @@ func prepare() (err error) {
 			"LIMIT 10 " +
 			"OFFSET ? ")
 		if err != nil { return; }
-*/
+	*/
 
 	/*addNewsfeedItemStmt, err = db.Prepare(
-		"INSERT INTO newsfeed_item (user_id, location_id, place_id, list_id " +
-		"timestamp, picture, is_new_in_list, position, is_trending, is_visiting, " +
-		"profile_picture_updated, school_updated, school) VALUES ($1, $2, $3, $4 " + 
-		"$5, $6, $7, $8, $9, $10, $11, $12, $13)")
-	if err != nil {
-		return
-	}
+			"INSERT INTO newsfeed_item (user_id, location_id, place_id, list_id " +
+			"timestamp, picture, is_new_in_list, position, is_trending, is_visiting, " +
+			"profile_picture_updated, school_updated, school) VALUES ($1, $2, $3, $4 " +
+			"$5, $6, $7, $8, $9, $10, $11, $12, $13)")
+		if err != nil {
+			return
+		}
 
-	getNewsfeedStmt, err = db.Prepare(
-		"SELECT user_id, location_id, place_id, list_id, timestamp, picture, is_new_in_list " +
-		"position, is_trending, is_visiting, profile_picture_updated FROM newsfeed_item " +
-		"WHERE (location_id = $1 OR user_id = $3) AND latest_id > $2 LIMIT 30")
-	if err != nil {
-		return
-	}
+		getNewsfeedStmt, err = db.Prepare(
+			"SELECT user_id, location_id, place_id, list_id, timestamp, picture, is_new_in_list " +
+			"position, is_trending, is_visiting, profile_picture_updated FROM newsfeed_item " +
+			"WHERE (location_id = $1 OR user_id = $3) AND latest_id > $2 LIMIT 30")
+		if err != nil {
+			return
+		}
 
-	getNewsfeedEarlierStmt, err = db.Prepare(
-		"SELECT user_id, location_id, place_id, list_id, timestamp, picture, is_new_in_list " +
-                "position, is_trending, is_visiting, profile_picture_updated FROM newsfeed_item " +
-	        "WHERE (location_id = $1 OR user_id = $3) AND latest_id < $2 LIMIT 30")
-	if err != nil {
-		return
-	}*/
+		getNewsfeedEarlierStmt, err = db.Prepare(
+			"SELECT user_id, location_id, place_id, list_id, timestamp, picture, is_new_in_list " +
+	                "position, is_trending, is_visiting, profile_picture_updated FROM newsfeed_item " +
+		        "WHERE (location_id = $1 OR user_id = $3) AND latest_id < $2 LIMIT 30")
+		if err != nil {
+			return
+		}*/
 
-/*
+	/*
 		getLocationStmt, err = db.Prepare(
 			"SELECT * FROM location WHERE id = ?")
 		if err != nil { return; }
@@ -192,34 +207,39 @@ func prepare() (err error) {
 			"|/ ((centre_lat - ?) ^ 2 + (centre_long - ?))" +
 			"")
 		if err != nil { return; }
-*/
+	*/
 	getPlaceStmt, err = db.Prepare(
-		"SELECT * FROM place WHERE id = $1")
+		"SELECT latitude, longitude, factual_id, name, address, locality, " +
+			"region, postcode, country, telephone, website, email " +
+			"FROM wl.place WHERE id = $1;")
 	if err != nil {
 		return
 	}
 
 	getPlaceByFactualStmt, err = db.Prepare(
-		"SELECT * FROM place WHERE factual_id = $1")
+		"SELECT latitude, longitude, factual_id, name, address, locality, " +
+			"region, postcode, country, telephone, website, email " +
+			"FROM wl.place WHERE factual_id = $1;")
 	if err != nil {
 		return
 	}
 
 	updatePlaceStmt, err = db.Prepare(
-		"UPDATE place SET latitude=$1, longitude=$2, factual_id=$3, name=$4 " +
-		"address=$5, locality=$6, region=$7, postcode=$8, country=$9, tel=$10, "
-		"website=$11, email=$12 WHERE factual_id=$3 " +
-		"RETURNING id;")
+		"UPDATE wl.place SET latitude=$1, longitude=$2, factual_id=$3, " +
+			"name=$4, address=$5, locality=$6, region=$7, postcode=$8, " +
+			"country=$9, telephone=$10, website=$11, email=$12 " +
+			"WHERE factual_id=$3 RETURNING id;")
 	if err != nil {
 		return
 	}
 
 	addPlaceStmt, err = db.Prepare(
-		"INSERT INTO place (latitude, longitude, factual_id, name, address " +
-		"locality, region, postcode, country, tel, website, email) " +
-		"VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) " +
-		"WHERE NOT EXISTS (SELECT 1 FROM place WHERE factual_id=$3" +
-		"RETURNING id;")
+		"INSERT INTO wl.place (latitude, longitude, factual_id, name, " +
+			"address, locality, region, postcode, country, telephone, " +
+			"website, email) " +
+			"SELECT $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12 " +
+			"WHERE NOT EXISTS (SELECT 1 FROM place WHERE factual_id=$3) " +
+			"RETURNING id;")
 	if err != nil {
 		return
 	}
@@ -246,14 +266,17 @@ func Hash(username, password string) (hash string, err error) {
 	return
 }
 
-func Connect() (err error) {
+func Initialize() (err error) {
 	db, err = sql.Open("postgres",
-		"user=whooplist dbname=whooplist password=moteifae0ohcaiCo " +
-		"sslmode=disable search_path=public,pg_catalog")
+		"user=whooplist dbname=whooplist password=moteifae0ohcaiCo "+
+			"sslmode=disable search_path=wl host=localhost")
 
 	if err == nil {
 		err = prepare()
 	}
+
+	initializeOauth()
+
 	return
 }
 
@@ -265,8 +288,9 @@ func Disconnect() (err error) {
 func GetUserData(id int64, email string) (user *User, err error) {
 	res := getUserDataStmt.QueryRow(id, email)
 	user = new(User)
-	err = res.Scan(&user.Id, &user.Email, &user.Name, &user.Birthday, &user.School,
-		&user.Picture, &user.Gender, &user.PasswordHash, &user.Role)
+	err = res.Scan(&user.Id, &user.Email, &user.Name, &user.Fname,
+		&user.Lname, &user.Birthday, &user.School, &user.Picture, &user.Gender,
+		&user.PasswordHash, &user.Role)
 
 	if err == sql.ErrNoRows {
 		user = nil
@@ -287,8 +311,9 @@ func CreateUser(user *User) (err error) {
 		}
 		user.Picture = &str
 	}
-	_, err = createUserStmt.Exec(user.Email, user.Name, user.Birthday, user.School,
-		user.Picture, user.Gender, user.PasswordHash, user.Role)
+	_, err = createUserStmt.Exec(user.Email, user.Name, user.Fname,
+		user.Lname, user.Birthday, user.School, user.Picture,
+		user.Gender, user.PasswordHash, user.Role)
 	return
 }
 
@@ -301,8 +326,9 @@ func CheckUpdateUser(email, password string) (user *User, err error) {
 
 	user = new(User)
 	res := loginUserVerifyStmt.QueryRow(email, hash)
-	err = res.Scan(&user.Id, &user.Email, &user.Name, &user.Birthday, &user.School,
-		&user.Picture, &user.Gender, &user.Role)
+	err = res.Scan(&user.Id, &user.Email, &user.Name, &user.Fname,
+		&user.Lname, &user.Birthday, &user.School, &user.Picture,
+		&user.Gender, &user.Role)
 	if err == sql.ErrNoRows {
 		user = nil
 		err = nil
@@ -330,8 +356,9 @@ func UpdateUser(user User) (err error) {
 		}
 		user.Picture = &str
 	}
-	_, err = updateUserStmt.Exec(user.Email, user.Name, user.Birthday,
-		user.School, user.Picture, user.Gender, userHash, user.Role)
+	_, err = updateUserStmt.Exec(user.Email, user.Name, user.Fname,
+		user.Lname, user.Birthday, user.School, user.Picture,
+		user.Gender, userHash, user.Role)
 	return
 }
 
@@ -360,7 +387,9 @@ func AuthUser(key string) (user *User, session *Session, err error) {
 	return
 }
 
-func LoginUser(username, password string) (user *User, session *Session, err error) {
+func LoginUser(username, password string) (user *User,
+	session *Session, err error) {
+
 	hash, err := Hash(username, password)
 
 	if err != nil {
@@ -369,8 +398,9 @@ func LoginUser(username, password string) (user *User, session *Session, err err
 
 	res := loginUserVerifyStmt.QueryRow(username, hash)
 	user = new(User)
-	err = res.Scan(&user.Id, &user.Email, &user.Name, &user.Birthday, &user.School,
-		&user.Picture, &user.Gender, &user.Role)
+	err = res.Scan(&user.Id, &user.Email, &user.Name, &user.Fname,
+		&user.Lname, &user.Birthday, &user.School, &user.Picture,
+		&user.Gender, &user.Role)
 
 	if err == sql.ErrNoRows {
 		err = nil
@@ -399,7 +429,8 @@ func LoginUser(username, password string) (user *User, session *Session, err err
 		return
 	}
 
-	/* TODO: We don't fill the whole session, we should identify if this is a problem. */
+	/* TODO: We don't fill the whole session,
+	we should identify if this is a problem. */
 
 	session = new(Session)
 	session.UserId = user.Id
@@ -420,7 +451,7 @@ func DeleteSession(key string) (exist bool, err error) {
 }
 
 func UserExists(email string) (exist bool, err error) {
-	res, err := existsUserStmt.Exec(email)
+	res, err := existsUserStmt.Exec(strings.ToLower(email))
 	if err == nil {
 		rows, _ := res.RowsAffected()
 		if rows == 1 {
@@ -430,7 +461,7 @@ func UserExists(email string) (exist bool, err error) {
 	return
 }
 
-func GetUserLists(userId int) (lists []int, err error) {
+func GetUserLists(userId int64) (lists []int, err error) {
 	rows, err := getUserListsStmt.Query(userId)
 
 	if err == sql.ErrNoRows {
@@ -455,7 +486,7 @@ func GetUserLists(userId int) (lists []int, err error) {
 	return
 }
 
-func GetUserList(userId, listId int) (list *UserList, err error) {
+func GetUserList(userId, listId int64) (list *UserList, err error) {
 	list = new(UserList)
 	list.UserId = userId
 	list.ListId = listId
@@ -516,7 +547,7 @@ func PutUserList(list UserList) (err error) {
 
 }
 
-func DeleteUserList(userId, listId int) (err error) {
+func DeleteUserList(userId, listId int64) (err error) {
 	_, err = deleteUserListStmt.Exec(userId, listId)
 	return
 }
@@ -533,13 +564,14 @@ func GetListTypes() (lists []List, err error) {
 	for rows.Next() {
 		var curr List
 		var children string
-		err = rows.Scan(&curr.Id, &curr.Name, &curr.Icon, children)
+		err = rows.Scan(&curr.Id, &curr.Name, &curr.Icon, &children)
 
 		if children != "" {
 			childrenSlice := strings.Split(children, ",")
 			curr.Children = make([]int64, len(childrenSlice))
 			for key, child := range childrenSlice {
-				curr.Children[key], err = strconv.ParseInt(child, 10, 64)
+				curr.Children[key], err = strconv.ParseInt(
+					strings.TrimSpace(child), 10, 64)
 				if err != nil {
 					return nil, err
 				}
@@ -555,30 +587,33 @@ func GetListTypes() (lists []List, err error) {
 	return
 }
 
-func GetWhooplistCoordinate(userId int, listId int, page int,
-	lat float64, long float64, radius float64) (list *WhooplistCoordinate, err error) {
+func GetWhooplistCoordinate(userId, listId int64, page int, lat, long,
+	radius float64) (list *WhooplistCoordinate, err error) {
 	//TODO: Implement
 	return
 }
 
-func GetWhooplistLocation(userId int, listId int, page int,
+func GetWhooplistLocation(userId, listId int64, page int,
 	locationId int) (list *WhooplistLocation, err error) {
 	//TODO: Implement
 	return
 }
 
 func AddNewsfeedItem(item *FeedItem) (err error) {
-	_, err = addNewsfeedItemStmt.Query(&item.UserId, &item.LocationId, &item.PlaceId,
-		&item.ListId, &item.Picture, &item.Type, &item.AuxString, &item.AuxInt)
+	_, err = addNewsfeedItemStmt.Query(&item.UserId, &item.LocationId,
+		&item.PlaceId, &item.ListId, &item.Picture,
+		&item.Type, &item.AuxString, &item.AuxInt)
 	return
 }
 
 func GetNewsfeed(location, latest_id, user_id int64) (items []FeedItem, err error) {
-	return getNewsfeed(getNewsfeedStmt.Query(location, latest_id, user_id))
+	return getNewsfeed(getNewsfeedStmt.Query(location,
+		latest_id, user_id))
 }
 
 func GetNewsfeedEarlier(location, earliest_id, user_id int64) (items []FeedItem, err error) {
-	return getNewsfeed(getNewsfeedEarlierStmt.Query(location, earliest_id, user_id))
+	return getNewsfeed(getNewsfeedEarlierStmt.Query(location,
+		earliest_id, user_id))
 }
 
 func getNewsfeed(rows *sql.Rows, inErr error) (items []FeedItem, err error) {
@@ -590,8 +625,9 @@ func getNewsfeed(rows *sql.Rows, inErr error) (items []FeedItem, err error) {
 
 	for rows.Next() {
 		var item FeedItem
-		err = rows.Scan(&item.Timestamp, &item.UserId, &item.LocationId, &item.PlaceId,
-			&item.ListId, &item.Picture, &item.Type, &item.AuxString, &item.AuxInt)
+		err = rows.Scan(&item.Timestamp, &item.UserId, &item.LocationId,
+			&item.PlaceId, &item.ListId, &item.Picture, &item.Type,
+			&item.AuxString, &item.AuxInt)
 		items = append(items, item)
 		if err != nil {
 			items = nil
@@ -601,7 +637,7 @@ func getNewsfeed(rows *sql.Rows, inErr error) (items []FeedItem, err error) {
 	return
 }
 
-func GetLocation(locationId int) (location *Location, err error) {
+/*func GetLocation(locationId int) (location *Location, err error) {
 	location = new(Location)
 
 	res := getLocationStmt.QueryRow(locationId)
@@ -617,9 +653,9 @@ func GetLocation(locationId int) (location *Location, err error) {
 func GetLocationCoordinate(lat, long float64) (locations []Location, err error) {
 	//TODO: Implement
 	return
-}
+}*/
 
-func GetPlace(placeId int) (place *Place, err error) {
+func GetPlace(placeId int64) (place *Place, err error) {
 	place = new(Place)
 
 	res := getPlaceStmt.QueryRow(placeId)
@@ -628,27 +664,40 @@ func GetPlace(placeId int) (place *Place, err error) {
 		&place.Region, &place.Postcode, &place.Country,
 		&place.Tel, &place.Website, &place.Email)
 
-	if err != nil {
+	if err == sql.ErrNoRows {
+		return nil, nil
+	} else if err != nil {
 		place = nil
 	}
 
 	return
 }
 
-func SearchPlace(listId int64, lat, long float64, str string) (places []Place, err error) {
+func SearchPlace(str string, listId int64, page int32,
+	lat, long, radius float64) (places []Place, err error) {
+
+	places, err = factualSearchPlace(str, lat, long, radius, page)
+
+	if err != nil {
+		return
+	}
+
+	/*for _, place := range places {
+		err = storePlace(&place)
+		if err != nil {
+			places = nil
+			return
+		}
+	}*/
 	return
 }
 
-func storePlace(factualId string) (placeId int64, err error) {
+func storePlace(place *Place) (err error) {
+	res := addPlaceStmt.QueryRow(place.Latitude, place.Longitude,
+		place.FactualId, place.Name, place.Address, place.Locality,
+		place.Region, place.Postcode, place.Country, place.Tel,
+		place.Website, place.Email)
 
-
-
-	res := addPlaceStmt.QueryRow(...)
-
-	err = res.Scan(&placeId)
-
-	if err != nil {
-		placeId = 0
-	}
+	err = res.Scan(&place.Id)
 	return
 }

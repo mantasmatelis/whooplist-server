@@ -3,3 +3,5 @@ source/api/api
 source/api/api.log
 source/user_hash/user_hash
 backups/*
+.DS_Store
+sql/transformed.sql

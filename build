@@ -1,0 +1,9 @@
+#!/bin/bash
+
+source ~/go/src/golang-crosscompile/crosscompile.bash
+echo Building...
+go-linux-amd64 build -o ./api ./source/api
+echo Copying...
+rsync -az ./api root@whooplist.com:/srv/www/api.whooplist.com/
+rm ./api
+echo Done!
