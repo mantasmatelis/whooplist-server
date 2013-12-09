@@ -12,7 +12,7 @@ func main() {
 	err := whooplist.Initialize()
 
 	if err != nil {
-		log.Fatal("Could not initialize data layer, " +
+		log.Fatal("could not initialize data layer, " +
 			"dying: " + err.Error())
 	}
 
@@ -44,8 +44,12 @@ func main() {
 		route.Route{"GET", "/listTypes", GetListTypes},
 
 		/* Whooplist Routes */
-		//route.Route{"GET", "/whooplist/:ListId/:Page/coordinate/:Lat/:Long/:Radius", GetWhooplistCoordinate},
-		//route.Route{"GET", "/whooplist/:ListId/:Page/location/:LocationId", GetWhooplistLocation},
+		route.Route{"GET",
+			"/whooplist/:ListId/:Page/coordinate/:Lat/:Long/:Radius",
+			GetWlCoordinate},
+		//route.Route{
+		//	"GET", "/whooplist/:ListId/:Page/location/:LocationId",
+		//	GetWhooplistLocation},
 
 		/* Newsfeed Routes */
 		//route.Route{"GET", "/newsfeed/:Location/:LatestId", GetNewsfeed},

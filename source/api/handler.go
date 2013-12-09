@@ -106,15 +106,10 @@ func (s *Server) handleRequest(w http.ResponseWriter, r *http.Request) {
 
 	context.Params = params
 
-	code, err := route.Func.(func(http.ResponseWriter, *http.Request,
-		Context) (int, error))(w, r, context)
+	route.Func.(func(http.ResponseWriter, *http.Request,
+		Context))(w, r, context)
 
-	if code != 0 {
-		http.Error(w, "", code)
-		if err != nil {
-			log.Print("Error handling request: ", err.Error())
-		}
-	}
+	w.Write([]byte{}) /* Force a 200 status if none sent */
 }
 
 func readRequest(req *http.Request) (body *RequestBody, err error) {

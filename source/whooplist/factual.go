@@ -15,14 +15,12 @@ const factualLimit = 40
 var oConsumer *oauth.Consumer
 
 type factualManyResp struct {
-	Version  int                  `json:"version"`
-	Status   string               `json:"status"`
-	Response factualManyRespInner `json:"response"`
-}
-
-type factualManyRespInner struct {
-	Data         []factualPlace `json:"data"`
-	IncludedRows int            `json:"included_rows"`
+	Version  int    `json:"version"`
+	Status   string `json:"status"`
+	Response struct {
+		Data         []factualPlace `json:"data"`
+		IncludedRows int            `json:"included_rows"`
+	} `json:"response"`
 }
 
 type factualPlace struct {

@@ -587,7 +587,7 @@ func GetListTypes() (lists []List, err error) {
 	return
 }
 
-func GetWhooplistCoordinate(userId, listId int64, page int, lat, long,
+func GetWhooplistCoordinate(userId, listId int64, page int32, lat, long,
 	radius float64) (list *WhooplistCoordinate, err error) {
 	//TODO: Implement
 	return
@@ -606,12 +606,16 @@ func AddNewsfeedItem(item *FeedItem) (err error) {
 	return
 }
 
-func GetNewsfeed(location, latest_id, user_id int64) (items []FeedItem, err error) {
+func GetNewsfeed(location, latest_id,
+	user_id int64) (items []FeedItem, err error) {
+
 	return getNewsfeed(getNewsfeedStmt.Query(location,
 		latest_id, user_id))
 }
 
-func GetNewsfeedEarlier(location, earliest_id, user_id int64) (items []FeedItem, err error) {
+func GetNewsfeedEarlier(location, earliest_id,
+	user_id int64) (items []FeedItem, err error) {
+
 	return getNewsfeed(getNewsfeedEarlierStmt.Query(location,
 		earliest_id, user_id))
 }
@@ -679,25 +683,23 @@ func SearchPlace(str string, listId int64, page int32,
 	places, err = factualSearchPlace(str, lat, long, radius, page)
 
 	if err != nil {
+		places = nil
 		return
 	}
 
-	/*for _, place := range places {
-		err = storePlace(&place)
-		if err != nil {
-			places = nil
-			return
-		}
-	}*/
+	err = addPlaces(places)
+
 	return
 }
 
-func storePlace(place *Place) (err error) {
-	res := addPlaceStmt.QueryRow(place.Latitude, place.Longitude,
-		place.FactualId, place.Name, place.Address, place.Locality,
-		place.Region, place.Postcode, place.Country, place.Tel,
-		place.Website, place.Email)
+func addPlaces(places []Place) (err error) {
+	for _, place := range places {
+		res := addPlaceStmt.QueryRow(place.Latitude, place.Longitude,
+			place.FactualId, place.Name, place.Address, place.Locality,
+			place.Region, place.Postcode, place.Country, place.Tel,
+			place.Website, place.Email)
 
-	err = res.Scan(&place.Id)
+		err = res.Scan(&place.Id)
+	}
 	return
 }
