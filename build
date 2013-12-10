@@ -6,4 +6,6 @@ go-linux-amd64 build -o ./api ./source/api
 echo Copying...
 rsync -az ./api root@whooplist.com:/srv/www/api.whooplist.com/
 rm ./api
+echo Restarting...
+ssh root@whooplist.com "systemctl restart whooplist-api.service"
 echo Done!
