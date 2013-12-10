@@ -5,11 +5,14 @@ import (
 	"crypto/rand"
 	"database/sql"
 	"encoding/base64"
+	"errors"
 	_ "github.com/lib/pq"
 	"io"
 	"strconv"
 	"strings"
 )
+
+var UserError = errors.New("whooplist: user error")
 
 /* Application global database connection pool */
 var db *sql.DB
@@ -93,17 +96,18 @@ func prepare() (err error) {
 		return
 	}
 
-	getUserListStmt, err = db.Prepare(
+	/*getUserListStmt, err = db.Prepare(
 		"SELECT place_id FROM wl.list_item " +
 			"WHERE user_id = $1 AND list_id = $2 " +
 			"ORDER BY rank")
 	if err != nil {
 		return
-	}
+	}*/
 
-	getUserListPlaceStmt, err = db.Prepare(
-		"SELECT place.id, place.latitude, place.longitude, place.factual_id, place.name, " +
-			"place.address, place.locality, place.region, place.postcode, place.country, " +
+	getUserListStmt, err = db.Prepare(
+		"SELECT place.id, place.latitude, place.longitude, " +
+			"place.factual_id, place.name, place.address, " +
+			"place.locality, place.region, place.postcode, place.country, " +
 			"place.telephone, place.website, place.email " +
 			"FROM wl.list_item JOIN wl.place " +
 			"ON list_item.place_id = place.id " +
@@ -311,9 +315,16 @@ func CreateUser(user *User) (err error) {
 		}
 		user.Picture = &str
 	}
+
+	hash, err := Hash(user.Email, user.Password)
+
+	if err != nil {
+		return
+	}
+
 	_, err = createUserStmt.Exec(user.Email, user.Name, user.Fname,
 		user.Lname, user.Birthday, user.School, user.Picture,
-		user.Gender, user.PasswordHash, user.Role)
+		user.Gender, hash, user.Role)
 	return
 }
 
@@ -371,7 +382,8 @@ func DeleteUser(userId int64) (err error) {
 func AuthUser(key string) (user *User, session *Session, err error) {
 	res := authUserStmt.QueryRow(key)
 	session = new(Session)
-	err = res.Scan(&session.Id, &session.UserId, &session.Key)
+	err = res.Scan(&session.Id, &session.UserId, &session.Key,
+		&session.LastAuth, &session.LastUse)
 
 	if err == sql.ErrNoRows {
 		session = nil
@@ -482,15 +494,11 @@ func GetUserLists(userId int64) (lists []int, err error) {
 			return
 		}
 	}
-
 	return
 }
 
-func GetUserList(userId, listId int64) (list *UserList, err error) {
-	list = new(UserList)
-	list.UserId = userId
-	list.ListId = listId
-	list.Items = make([]ListItem, 0, 5)
+func GetUserList(userId, listId int64) (list []Place, err error) {
+	list = make([]Place, 0, 5)
 
 	rows, err := getUserListStmt.Query(userId, listId)
 
@@ -503,39 +511,38 @@ func GetUserList(userId, listId int64) (list *UserList, err error) {
 		return
 	}
 
-	rank := 1
 	for rows.Next() {
-		var curr ListItem
-		err = rows.Scan(&curr.PlaceId)
-		curr.Rank = rank
-		rank += 1
+		var curr Place
+		err = rows.Scan(&curr.Id, &curr.Latitude, &curr.Longitude,
+			&curr.FactualId, &curr.Name, &curr.Address, &curr.Locality,
+			&curr.Region, &curr.Postcode, &curr.Country, &curr.Tel,
+			&curr.Website, &curr.Email)
 
-		list.Items = append(list.Items, curr)
 		if err != nil {
 			list = nil
 			return
 		}
+
+		list = append(list, curr)
 	}
 	return
 }
 
-func PutUserList(list UserList) (err error) {
+func PutUserList(userId, listId int64, places []int64) (err error) {
 	tx, err := db.Begin()
-
 	if err != nil {
 		return
 	}
 
-	_, err = tx.Stmt(deleteUserListStmt).Exec(list.UserId, list.ListId)
+	_, err = tx.Stmt(deleteUserListStmt).Exec(userId, listId)
 
 	if err != nil {
 		tx.Rollback()
 		return
 	}
 
-	for _, item := range list.Items {
-		_, err = tx.Stmt(putUserListStmt).Exec(item.PlaceId, item.ListId,
-			item.UserId, item.Rank)
+	for i, item := range places {
+		_, err = tx.Stmt(putUserListStmt).Exec(item, listId, userId, i+1)
 		if err != nil {
 			tx.Rollback()
 			return
@@ -588,13 +595,13 @@ func GetListTypes() (lists []List, err error) {
 }
 
 func GetWhooplistCoordinate(userId, listId int64, page int32, lat, long,
-	radius float64) (list *WhooplistCoordinate, err error) {
+	radius float64) (places []Place, err error) {
 	//TODO: Implement
 	return
 }
 
 func GetWhooplistLocation(userId, listId int64, page int,
-	locationId int) (list *WhooplistLocation, err error) {
+	locationId int) (places []Place, err error) {
 	//TODO: Implement
 	return
 }
@@ -693,13 +700,24 @@ func SearchPlace(str string, listId int64, page int32,
 }
 
 func addPlaces(places []Place) (err error) {
-	for _, place := range places {
+	for k, place := range places {
 		res := addPlaceStmt.QueryRow(place.Latitude, place.Longitude,
 			place.FactualId, place.Name, place.Address, place.Locality,
 			place.Region, place.Postcode, place.Country, place.Tel,
 			place.Website, place.Email)
 
-		err = res.Scan(&place.Id)
+		err = res.Scan(&(places[k].Id))
+
+		if err == sql.ErrNoRows {
+			res := updatePlaceStmt.QueryRow(place.Latitude, place.Longitude,
+				place.FactualId, place.Name, place.Address, place.Locality,
+				place.Region, place.Postcode, place.Country, place.Tel,
+				place.Website, place.Email)
+			err = res.Scan(&(places[k].Id))
+			if err != nil {
+				return
+			}
+		}
 	}
 	return
 }

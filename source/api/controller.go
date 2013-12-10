@@ -106,12 +106,7 @@ func CreateUserList(w http.ResponseWriter, req *http.Request, ctx Context) {
 	ensure(ctx.Body != nil, 400)
 	listId := parseInt64(ctx.Params["ListId"])
 
-	list := whooplist.UserList{}
-	list.Items = ctx.Body.Items
-	list.UserId = ctx.User.Id
-	list.ListId = listId
-
-	if_error(whooplist.PutUserList(list))
+	if_error(whooplist.PutUserList(ctx.User.Id, listId, ctx.Body.Places))
 }
 
 func DeleteUserList(w http.ResponseWriter, req *http.Request, ctx Context) {
