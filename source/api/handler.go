@@ -26,9 +26,9 @@ func logHandler(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		baseCode := 200
 		loggingW := loggingResponseWriter{code: &baseCode, ResponseWriter: w}
-		log.Print("Request: ", r.Method, " ", r.URL.Path)
+		log.Print("request: ", r.Method, " ", r.URL.Path)
 		handler.ServeHTTP(loggingW, r)
-		log.Print("Response: ", *loggingW.code)
+		log.Print("response: ", *loggingW.code)
 	})
 }
 
