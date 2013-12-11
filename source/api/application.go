@@ -11,6 +11,8 @@ func main() {
 	/* Let caller handle timestamping */
 	log.SetFlags(0)
 
+	log.Print("initializing...")
+
 	/* Initialze data layer */
 	err := whooplist.Initialize()
 
@@ -75,5 +77,7 @@ func main() {
 		Addr:    ":3000",
 		Handler: logHandler(panicHandler(http.HandlerFunc(s.handleRequest))),
 	}
+
+	log.Print("done! listening.")
 	log.Fatal(hs.ListenAndServe())
 }

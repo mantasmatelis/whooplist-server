@@ -41,7 +41,7 @@ func panicHandler(handler http.Handler) http.Handler {
 				if aE, ok := rec.(apiError); ok {
 					http.Error(w, "", aE.code)
 					if aE.err != nil {
-						log.Print("Error handling request: ",
+						log.Print("error handling request: ",
 							aE.err.Error())
 					}
 					return
@@ -78,7 +78,7 @@ func (s *Server) handleRequest(w http.ResponseWriter, r *http.Request) {
 	var err error
 	context.Body, err = readRequest(r)
 	if err != nil {
-		log.Print("Error parsing request: " + err.Error())
+		log.Print("error parsing request: " + err.Error())
 		http.Error(w, "", 400)
 		return
 	}
@@ -87,7 +87,7 @@ func (s *Server) handleRequest(w http.ResponseWriter, r *http.Request) {
 		context.User, context.Session, err = whooplist.AuthUser(context.Body.Key)
 	}
 	if err != nil {
-		log.Print("Error authenticating user: " + err.Error())
+		log.Print("error authenticating user: " + err.Error())
 		http.Error(w, "", 500)
 		return
 	}
