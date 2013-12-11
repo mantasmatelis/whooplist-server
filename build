@@ -3,8 +3,16 @@
 source ~/go/src/golang-crosscompile/crosscompile.bash
 echo Building...
 go-linux-amd64 build -o ./api ./source/api
+if [ $? -ne 0 ]; then
+    echo Build failed, exiting
+    exit
+fi
 echo Copying...
 rsync -az ./api root@whooplist.com:/srv/www/api.whooplist.com/
+if [ $? -ne 0 ]; then
+    echo Copy failed, exiting
+    exit
+fi
 rm ./api
 echo Restarting...
 ssh root@whooplist.com "systemctl restart whooplist-api.service"
