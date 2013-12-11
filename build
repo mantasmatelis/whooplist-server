@@ -11,6 +11,7 @@ echo Copying...
 rsync -az ./api root@whooplist.com:/srv/www/api.whooplist.com/
 if [ $? -ne 0 ]; then
     echo Copy failed, exiting
+    rm ./api
     exit
 fi
 rm ./api
