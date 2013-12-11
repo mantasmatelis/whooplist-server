@@ -8,6 +8,9 @@ import (
 )
 
 func main() {
+	/* Let caller handle timestamping */
+	log.SetFlags(0)
+
 	/* Initialze data layer */
 	err := whooplist.Initialize()
 
