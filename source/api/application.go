@@ -50,10 +50,10 @@ func main() {
 
 		/* Whooplist Routes */
 		route.Route{"GET",
-			"/whooplist/:ListId/:Page/coordinate/:Lat/:Long/:Radius",
+			"/whooplist/:ListId/coordinate/:Lat/:Long/:Radius/:Page",
 			GetWlCoordinate},
 		//route.Route{
-		//	"GET", "/whooplist/:ListId/:Page/location/:LocationId",
+		//	"GET", "/whooplist/:ListId/location/:LocationId/:Page",
 		//	GetWhooplistLocation},
 
 		/* Newsfeed Routes */

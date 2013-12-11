@@ -135,44 +135,75 @@ func prepare() (err error) {
 	if err != nil {
 		return
 	}
-	/*
-	   	getWhooplistStmt, err = db.Prepare(
-	   		"SELECT score, place.id, place.latitude, place.longitude, place.factual_id, place.name, " +
-	                           "place.address, place.locality, place.region, place.postcode, place.country, " +
-	                           "place.telephone, place.website, place.email " +
-	   			"FROM whooplist_item JOIN place " +
-	   			"ON whooplist_item.place_id = place.id " +
-	   			"WHERE whooplist_item.list_id = $1 AND " +
-	   			"((place.lat - $2)^2 + (place.long - $3)^2) < ($4 * $4)
-	   	);
-	*/
-	/*	   	//TODO: fix to coordinate
-		getWhooplistCoordinateStmt, err = db.Prepare(
-			"SELECT place.id AS place_id, SUM(10 - rank) AS score " +
-	                "FROM list_item " +
-	                "JOIN place ON list_item.place_id = place.id " +
-	                "JOIN place_location ON list_item.place_id = place_location.place_id " +
-	                "WHERE place_location.location_id = ? " +
-	                "WHERE list_item.list_id = ? " +
-	                "ORDER BY score " +
-	                "GROUP BY list_item.place_id " +
-	                "LIMIT 10 " +
-	                "OFFSET ? ")
-		if err != nil { return; }
 
-		//TODO: check correctness. probably incorrect
-		getWhooplistLocationStmt, err = db.Prepare(
-			"SELECT place.id AS place_id, SUM(10 - rank) AS score " +
-			"FROM list_item " +
-			"JOIN place ON list_item.place_id = place.id " +
-			"JOIN place_location ON list_item.place_id = place_location.place_id " +
-			"WHERE place_location.location_id = ? " +
-			"WHERE list_item.list_id = ? " +
-			"ORDER BY score " +
-			"GROUP BY list_item.place_id " +
-			"LIMIT 10 " +
-			"OFFSET ? ")
-		if err != nil { return; }
+	/* Note, the constant below is 360 / (earth's radius (m)) */
+	getWhooplistCoordinateStmt, err = db.Prepare(
+		"SELECT SUM(5 - rank) AS score, place.id, place.latitude, place.longitude, " +
+			"place.factual_id, place.name, place.address, " +
+			"place.locality, place.region, place.postcode, place.country, " +
+			"place.telephone, place.website, place.email " +
+			"FROM list_item JOIN place " +
+			"ON list_item.place_id = place.id " +
+			"WHERE list_item.list_id = $1 AND " +
+			"latitude + (($4 * 0.00000898314) / cos(latitude)) > $2 AND " +
+			"latitude - (($4 * 0.00000898314) / cos(latitude)) < $2 AND " +
+			"longitude + ($4 * 0.00000898314) > $3 AND " +
+			"longitude - ($4 * 0.00000898314) < $3 " +
+			"GROUP BY place.id " +
+			"LIMIT 10 OFFSET $5")
+	if err != nil {
+		return
+	}
+
+	/*
+		With cache
+
+		getWhooplistCoordinateStmt, err = db.Prepare(
+			"SELECT score, place.id, place.latitude, place.longitude, " +
+				"place.factual_id, place.name, place.address, " +
+				"place.locality, place.region, place.postcode, place.country, " +
+				"place.telephone, place.website, place.email " +
+				"FROM whooplist_item JOIN place " +
+				"ON whooplist_item.place_id = place.id " +
+				"WHERE whooplist_item.list_id = $1 AND " +
+				"1 = 1 OR (" +
+				"latitude + (($4 * 0.00000898314) / cos(latitude)) > $2 AND " +
+				"latitude - (($4 * 0.00000898314) / cos(latitude)) < $2 AND " +
+				"longitude + ($4 * 0.00000898314) > $3 AND " +
+				"longitude - ($4 * 0.00000898314) < $3 )" +
+				"LIMIT 10 OFFSET (10 * ($5 - 1))")
+		if err != nil {
+			return
+		}
+	*/
+
+	//TODO: fix to coordinate
+	/*	getWhooplistCoordinateStmt, err = db.Prepare(
+				"SELECT place.id AS place_id, SUM(10 - rank) AS score " +
+		                "FROM list_item " +
+		                "JOIN place ON list_item.place_id = place.id " +
+		                "JOIN place_location ON list_item.place_id = place_location.place_id " +
+		                "WHERE place_location.location_id = ? " +
+		                "WHERE list_item.list_id = ? " +
+		                "ORDER BY score " +
+		                "GROUP BY list_item.place_id " +
+		                "LIMIT 10 " +
+		                "OFFSET ? ")
+			if err != nil { return; }
+
+			//TODO: check correctness. probably incorrect
+			getWhooplistLocationStmt, err = db.Prepare(
+				"SELECT place.id AS place_id, SUM(10 - rank) AS score " +
+				"FROM list_item " +
+				"JOIN place ON list_item.place_id = place.id " +
+				"JOIN place_location ON list_item.place_id = place_location.place_id " +
+				"WHERE place_location.location_id = ? " +
+				"WHERE list_item.list_id = ? " +
+				"ORDER BY score " +
+				"GROUP BY list_item.place_id " +
+				"LIMIT 10 " +
+				"OFFSET ? ")
+			if err != nil { return; }
 	*/
 
 	/*addNewsfeedItemStmt, err = db.Prepare(
@@ -596,7 +627,30 @@ func GetListTypes() (lists []List, err error) {
 
 func GetWhooplistCoordinate(userId, listId int64, page int32, lat, long,
 	radius float64) (places []Place, err error) {
-	//TODO: Implement
+
+	places = make([]Place, 0, 20)
+
+	rows, err := getWhooplistCoordinateStmt.Query(
+		listId, lat, long, radius, (10 * (page - 1)))
+
+	if err != nil {
+		return
+	}
+
+	for rows.Next() {
+		var place Place
+
+		err = rows.Scan(&place.Score, &place.Id, &place.Latitude, &place.Longitude,
+			&place.FactualId, &place.Name, &place.Address, &place.Locality,
+			&place.Region, &place.Postcode, &place.Country,
+			&place.Tel, &place.Website, &place.Email)
+
+		places = append(places, place)
+
+		if err != nil {
+			return
+		}
+	}
 	return
 }
 

@@ -55,6 +55,8 @@ type Place struct {
 	Tel      string
 	Website  string
 	Email    string
+
+	Score int64
 }
 
 type Location struct {
