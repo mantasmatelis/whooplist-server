@@ -116,6 +116,18 @@ func DeleteUserList(w http.ResponseWriter, req *http.Request, ctx Context) {
 	if_error(whooplist.DeleteUserList(ctx.User.Id, listId))
 }
 
+func GetUserFriends(w http.ResponseWriter, req *http.Request, ctx Context) {
+
+}
+
+func AddUserFriend(w http.ResponseWriter, req *http.Request, ctx Context) {
+
+}
+
+func DeleteUserFriend(w http.ResponseWriter, req *http.Request, ctx Context) {
+
+}
+
 func GetListTypes(w http.ResponseWriter, req *http.Request, ctx Context) {
 	lists, err := whooplist.GetListTypes()
 	if_error(err)
@@ -145,17 +157,40 @@ func GetWlCoordinate(w http.ResponseWriter, req *http.Request, ctx Context) {
 /*func GetWhooplistLocation(w http.ResponseWriter, req *http.Request) {
 }*/
 
-func GetNewsfeed(w http.ResponseWriter, req *http.Request) {
+func GetNewsfeedNew(w http.ResponseWriter, req *http.Request, ctx Context) {
+	ctx.Params["LatestId"] = "-1"
+	GetNewsfeedUpdate(w, req, ctx)
 }
 
-func GetNewsfeedOlder(w http.ResponseWriter, req *http.Request) {
+func GetNewsfeedUpdate(w http.ResponseWriter, req *http.Request, ctx Context) {
+	ensure(ctx.User != nil, 403)
+
+	lat := parseFloat64(ctx.Params["Lat"])
+	long := parseFloat64(ctx.Params["Long"])
+	radius := parseFloat64(ctx.Params["Radius"])
+	latestId := parseInt64(ctx.Params["LatestId"])
+
+	items, err := whooplist.GetNewsfeed(
+		ctx.User.Id, latestId, lat, long, radius)
+	if_error(err)
+
+	writeObject(&items, w)
 }
 
-/*func GetLocation(w http.ResponseWriter, req *http.Request) {
-}
+func GetNewsfeedOlder(w http.ResponseWriter, req *http.Request, ctx Context) {
+	ensure(ctx.User != nil, 403)
 
-func GetLocationsCoordinate(w http.ResponseWriter, req *http.Request) {
-}*/
+	lat := parseFloat64(ctx.Params["Lat"])
+	long := parseFloat64(ctx.Params["Long"])
+	radius := parseFloat64(ctx.Params["Radius"])
+	earliestId := parseInt64(ctx.Params["LatestId"])
+
+	items, err := whooplist.GetNewsfeedEarlier(
+		ctx.User.Id, earliestId, lat, long, radius)
+	if_error(err)
+
+	writeObject(&items, w)
+}
 
 func GetPlace(w http.ResponseWriter, req *http.Request, ctx Context) {
 	placeId := parseInt64(ctx.Params["PlaceId"])

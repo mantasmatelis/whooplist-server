@@ -22,8 +22,8 @@ CREATE TABLE wl.session
   id serial NOT NULL PRIMARY KEY,
   user_id integer NOT NULL REFERENCES wl.user(id),
   key text NOT NULL,
-  last_auth timestamp without time zone NOT NULL,
-  last_use timestamp without time zone NOT NULL
+  last_auth timestamp without time zone DEFAULT LOCALTIMESTAMP NOT NULL,
+  last_use timestamp without time zone DEFAULT LOCALTIMESTAMP NOT NULL
 );
 CREATE INDEX session_key ON wl.session(key);
 
@@ -68,8 +68,10 @@ CREATE INDEX list_item_user_id_index ON wl.list_item(user_id);
 CREATE TABLE wl.feed_item
 (
   id serial NOT NULL PRIMARY KEY,
-  timestamp timestamp without time zone NOT NULL,
+  timestamp timestamp without time zone DEFAULT LOCALTIMESTAMP NOT NULL,
   user_id integer REFERENCES wl.user(id),
+  latitude double precision,
+  longitude double precision,
   place_id integer REFERENCES wl.place(id),
   list_id integer REFERENCES wl.list(id),
   picture text,
@@ -77,8 +79,7 @@ CREATE TABLE wl.feed_item
   aux_string text,
   aux_int integer
 );
-CREATE INDEX feed_item_user_id_index ON wl.feed_item(user_id);
-CREATE INDEX feed_item_place_id_index ON wl.feed_item(place_id); 
+
 
 CREATE TABLE wl.whooplist_item
 (

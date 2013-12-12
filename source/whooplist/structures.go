@@ -86,11 +86,12 @@ type FeedItem struct {
 
 	/* The following group of items do not all
 	   have to be present and may be 0 */
-	UserId     int
-	LocationId int
-	PlaceId    int
-	ListId     int
-	Picture    string
+	UserId    int
+	Latitude  float64
+	Longitude float64
+	PlaceId   int
+	ListId    int
+	Picture   string
 
 	/* Type Describes what the Newsfeed event is
 	* (No UserId) 1: Trending, 2: NewInWhooplist (AuxInt: Position)

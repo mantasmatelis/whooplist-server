@@ -41,9 +41,9 @@ func main() {
 		route.Route{"DELETE", "/users/lists/:ListId", DeleteUserList},
 
 		/* User Friend Routes */
-		//route.Route{"GET", "/friends", GetUserFriends},
-		//route.Route{"PUT", "/friends/:OtherId", AddUserFriend},
-		//route.Route{"DELETE", "/friends/:OtherId", DeleteUserFriend},
+		route.Route{"GET", "/friends", GetUserFriends},
+		route.Route{"PUT", "/friends/:OtherId", AddUserFriend},
+		route.Route{"DELETE", "/friends/:OtherId", DeleteUserFriend},
 
 		/* Possible List Routes */
 		route.Route{"GET", "/listTypes", GetListTypes},
@@ -52,17 +52,14 @@ func main() {
 		route.Route{"GET",
 			"/whooplist/:ListId/coordinate/:Lat/:Long/:Radius/:Page",
 			GetWlCoordinate},
-		//route.Route{
-		//	"GET", "/whooplist/:ListId/location/:LocationId/:Page",
-		//	GetWhooplistLocation},
 
 		/* Newsfeed Routes */
-		//route.Route{"GET", "/newsfeed/:Location/:LatestId", GetNewsfeed},
-		//route.Route{"GET", "/newsfeed/:Location/older/:EarliestId/", GetNewsfeedOlder},
-
-		/* Location Routes */
-		//route.Route{"GET", "/locations/:LocationId", GetLocation},
-		//route.Route{"GET", "/locations/:Latitude/:Longitude", GetLocationsCoordinate},
+		route.Route{"GET", "/newsfeed/older/:Lat/:Long/:Radius/:EarliestId",
+			GetNewsfeedOlder},
+		route.Route{"GET", "/newsfeed/:Lat/:Long/:Radius/:LatestId",
+			GetNewsfeedUpdate},
+		route.Route{"GET", "/newsfeed/:Lat/:Long/:Radius",
+			GetNewsfeedNew},
 
 		/* Place Routes */
 		route.Route{"GET",

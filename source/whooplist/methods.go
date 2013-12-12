@@ -96,14 +96,6 @@ func prepare() (err error) {
 		return
 	}
 
-	/*getUserListStmt, err = db.Prepare(
-		"SELECT place_id FROM wl.list_item " +
-			"WHERE user_id = $1 AND list_id = $2 " +
-			"ORDER BY rank")
-	if err != nil {
-		return
-	}*/
-
 	getUserListStmt, err = db.Prepare(
 		"SELECT place.id, place.latitude, place.longitude, " +
 			"place.factual_id, place.name, place.address, " +
@@ -136,7 +128,7 @@ func prepare() (err error) {
 		return
 	}
 
-	/* Note, the constant below is 360 / (earth's radius (m)) */
+	/* Note, the constant below is 360 / (earth's radius in meters) */
 	getWhooplistCoordinateStmt, err = db.Prepare(
 		"SELECT SUM(5 - rank) AS score, place.id, place.latitude, place.longitude, " +
 			"place.factual_id, place.name, place.address, " +
@@ -155,94 +147,47 @@ func prepare() (err error) {
 		return
 	}
 
-	/*
-		With cache
+	addNewsfeedItemStmt, err = db.Prepare(
+		"INSERT INTO wl.feed_item (user_id, latitude, longitude, " +
+			"place_id, list_id, picture, type, aux_string, aux_int) " +
+			"VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)")
+	if err != nil {
+		return
+	}
 
-		getWhooplistCoordinateStmt, err = db.Prepare(
-			"SELECT score, place.id, place.latitude, place.longitude, " +
-				"place.factual_id, place.name, place.address, " +
-				"place.locality, place.region, place.postcode, place.country, " +
-				"place.telephone, place.website, place.email " +
-				"FROM whooplist_item JOIN place " +
-				"ON whooplist_item.place_id = place.id " +
-				"WHERE whooplist_item.list_id = $1 AND " +
-				"1 = 1 OR (" +
-				"latitude + (($4 * 0.00000898314) / cos(latitude)) > $2 AND " +
-				"latitude - (($4 * 0.00000898314) / cos(latitude)) < $2 AND " +
-				"longitude + ($4 * 0.00000898314) > $3 AND " +
-				"longitude - ($4 * 0.00000898314) < $3 )" +
-				"LIMIT 10 OFFSET (10 * ($5 - 1))")
-		if err != nil {
-			return
-		}
-	*/
+	getNewsfeedStmt, err = db.Prepare(
+		"SELECT id, timestamp, user_id, latitude, longitude, place_id, " +
+			"list_id, picture, type, aux_string, aux_int " +
+			"FROM wl.feed_item " +
+			"WHERE (" +
+			"(user_id = $1) " +
+			"OR " +
+			"(latitude + (($5 * 0.00000898314) / cos(latitude)) > $3 AND " +
+			"latitude - (($5 * 0.00000898314) / cos(latitude)) < $3 AND " +
+			"longitude + ($5 * 0.00000898314) > $4 AND " +
+			"longitude - ($5 * 0.00000898314) < $4)) " +
+			"AND (id > $2 OR $2 = -1) " +
+			"LIMIT 30")
+	if err != nil {
+		return
+	}
 
-	//TODO: fix to coordinate
-	/*	getWhooplistCoordinateStmt, err = db.Prepare(
-				"SELECT place.id AS place_id, SUM(10 - rank) AS score " +
-		                "FROM list_item " +
-		                "JOIN place ON list_item.place_id = place.id " +
-		                "JOIN place_location ON list_item.place_id = place_location.place_id " +
-		                "WHERE place_location.location_id = ? " +
-		                "WHERE list_item.list_id = ? " +
-		                "ORDER BY score " +
-		                "GROUP BY list_item.place_id " +
-		                "LIMIT 10 " +
-		                "OFFSET ? ")
-			if err != nil { return; }
+	getNewsfeedEarlierStmt, err = db.Prepare(
+		"SELECT id, timestamp, user_id, latitude, longitude, place_id, " +
+			"list_id, picture, type, aux_string, aux_int " +
+			"FROM wl.feed_item " +
+			"WHERE (" +
+			"(user_id = $1) " +
+			"OR " +
+			"(latitude + (($5 * 0.00000898314) / cos(latitude)) > $3 AND " +
+			"latitude - (($5 * 0.00000898314) / cos(latitude)) < $3 AND " +
+			"longitude + ($5 * 0.00000898314) > $4 AND " +
+			"longitude - ($5 * 0.00000898314) < $4)) " +
+			"AND id < $2 LIMIT 30")
+	if err != nil {
+		return
+	}
 
-			//TODO: check correctness. probably incorrect
-			getWhooplistLocationStmt, err = db.Prepare(
-				"SELECT place.id AS place_id, SUM(10 - rank) AS score " +
-				"FROM list_item " +
-				"JOIN place ON list_item.place_id = place.id " +
-				"JOIN place_location ON list_item.place_id = place_location.place_id " +
-				"WHERE place_location.location_id = ? " +
-				"WHERE list_item.list_id = ? " +
-				"ORDER BY score " +
-				"GROUP BY list_item.place_id " +
-				"LIMIT 10 " +
-				"OFFSET ? ")
-			if err != nil { return; }
-	*/
-
-	/*addNewsfeedItemStmt, err = db.Prepare(
-			"INSERT INTO newsfeed_item (user_id, location_id, place_id, list_id " +
-			"timestamp, picture, is_new_in_list, position, is_trending, is_visiting, " +
-			"profile_picture_updated, school_updated, school) VALUES ($1, $2, $3, $4 " +
-			"$5, $6, $7, $8, $9, $10, $11, $12, $13)")
-		if err != nil {
-			return
-		}
-
-		getNewsfeedStmt, err = db.Prepare(
-			"SELECT user_id, location_id, place_id, list_id, timestamp, picture, is_new_in_list " +
-			"position, is_trending, is_visiting, profile_picture_updated FROM newsfeed_item " +
-			"WHERE (location_id = $1 OR user_id = $3) AND latest_id > $2 LIMIT 30")
-		if err != nil {
-			return
-		}
-
-		getNewsfeedEarlierStmt, err = db.Prepare(
-			"SELECT user_id, location_id, place_id, list_id, timestamp, picture, is_new_in_list " +
-	                "position, is_trending, is_visiting, profile_picture_updated FROM newsfeed_item " +
-		        "WHERE (location_id = $1 OR user_id = $3) AND latest_id < $2 LIMIT 30")
-		if err != nil {
-			return
-		}*/
-
-	/*
-		getLocationStmt, err = db.Prepare(
-			"SELECT * FROM location WHERE id = ?")
-		if err != nil { return; }
-
-		//TODO: Figure out the math on this one properly
-		getLocationCoordinateStmt, err = db.Prepare(
-			"SELECT * FROM location WHERE radius + 10 >  " +
-			"|/ ((centre_lat - ?) ^ 2 + (centre_long - ?))" +
-			"")
-		if err != nil { return; }
-	*/
 	getPlaceStmt, err = db.Prepare(
 		"SELECT latitude, longitude, factual_id, name, address, locality, " +
 			"region, postcode, country, telephone, website, email " +
@@ -654,45 +599,39 @@ func GetWhooplistCoordinate(userId, listId int64, page int32, lat, long,
 	return
 }
 
-func GetWhooplistLocation(userId, listId int64, page int,
-	locationId int) (places []Place, err error) {
-	//TODO: Implement
-	return
-}
-
 func AddNewsfeedItem(item *FeedItem) (err error) {
-	_, err = addNewsfeedItemStmt.Query(&item.UserId, &item.LocationId,
-		&item.PlaceId, &item.ListId, &item.Picture,
+	_, err = addNewsfeedItemStmt.Query(&item.UserId, &item.Latitude,
+		&item.Longitude, &item.PlaceId, &item.ListId, &item.Picture,
 		&item.Type, &item.AuxString, &item.AuxInt)
 	return
 }
 
-func GetNewsfeed(location, latest_id,
-	user_id int64) (items []FeedItem, err error) {
+func GetNewsfeed(user_id, latest_id int64,
+	lat, long, radius float64) (items []FeedItem, err error) {
 
-	return getNewsfeed(getNewsfeedStmt.Query(location,
-		latest_id, user_id))
+	return getNewsfeed(getNewsfeedStmt.Query(
+		user_id, latest_id, lat, long, radius))
 }
 
-func GetNewsfeedEarlier(location, earliest_id,
-	user_id int64) (items []FeedItem, err error) {
+func GetNewsfeedEarlier(user_id, earliest_id int64,
+	lat, long, radius float64) (items []FeedItem, err error) {
 
-	return getNewsfeed(getNewsfeedEarlierStmt.Query(location,
-		earliest_id, user_id))
+	return getNewsfeed(getNewsfeedEarlierStmt.Query(
+		user_id, earliest_id, lat, long, radius))
 }
 
 func getNewsfeed(rows *sql.Rows, inErr error) (items []FeedItem, err error) {
 	if inErr != nil {
-		return
+		return nil, inErr
 	}
 
 	items = make([]FeedItem, 0, 30)
 
 	for rows.Next() {
 		var item FeedItem
-		err = rows.Scan(&item.Timestamp, &item.UserId, &item.LocationId,
-			&item.PlaceId, &item.ListId, &item.Picture, &item.Type,
-			&item.AuxString, &item.AuxInt)
+		err = rows.Scan(&item.Timestamp, &item.UserId, &item.Latitude,
+			&item.Longitude, &item.PlaceId, &item.ListId, &item.Picture,
+			&item.Type, &item.AuxString, &item.AuxInt)
 		items = append(items, item)
 		if err != nil {
 			items = nil
