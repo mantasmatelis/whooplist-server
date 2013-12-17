@@ -5,11 +5,11 @@ import (
 )
 
 type User struct {
-	Id       int64
-	Email    string
-	Name     string
-	Fname    *string
-	Lname    *string
+	Id       *int64
+	Email    *string
+	Name     *string
+	Fname    *string    `json:",omitempty"`
+	Lname    *string    `json:",omitempty"`
 	Birthday *time.Time `json:",omitempty"`
 	School   *string    `json:",omitempty"`
 	Picture  *string    `json:",omitempty"`
@@ -20,8 +20,8 @@ type User struct {
 	Role         byte   `json:"-"`
 
 	/* For the client to pass to user only */
-	Password    string `json:",omitempty"`
-	OldPassword string `json:",omitempty"`
+	Password    *string `json:",omitempty"`
+	OldPassword *string `json:",omitempty"`
 }
 
 /* Sessions offer long-term authenticated communication between

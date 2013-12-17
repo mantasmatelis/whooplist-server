@@ -1,15 +1,15 @@
 package whooplist
 
 import (
-	"io"
-	"os"
-	"log"
-	"strings"
-	"io/ioutil"
-	"path/filepath"
-	"encoding/base64"
 	"crypto/rand"
 	"crypto/sha512"
+	"encoding/base32"
+	"encoding/base64"
+	"io"
+	"io/ioutil"
+	"log"
+	"os"
+	"path/filepath"
 )
 
 const basePath = "files/"
@@ -28,49 +28,47 @@ func WriteFileBase64(filename string, dataEncoded *string, infrastructure bool) 
 	return WriteFile(filename, data, infrastructure)
 }
 
-func WriteFile(filename string, data []byte, infrastructure bool) (path string, err error) {
-	hasher := sha512.New()
-	hasher.Write([]byte(filename))
-	hasher.Write([]byte(data))
-	filenameHash := hasher.Sum(nil)
-
-        secondaryData := make([]byte, 24)
-
-	if infrastructure {
-		secondaryData[0] = stickyVersion
+func WriteFile(filename string, data []byte, infra bool) (path string, err error) {
+	nameData := make([]byte, 16)
+	if infra {
+		hasher := sha512.New()
+		hasher.Write([]byte(filename))
+		hasher.Write([]byte(data))
+		nameData = hasher.Sum(nil)
+		nameData = nameData[:16]
 	} else {
-		n, err := io.ReadFull(rand.Reader, secondaryData)
-		if n != len(secondaryData) || err != nil {
+		n, err := io.ReadFull(rand.Reader, nameData)
+		if n != len(nameData) || err != nil {
 			return "", err
 		}
 	}
 
-        randString := base64.StdEncoding.EncodeToString(append(filenameHash, secondaryData...))
-	randString = strings.Replace(randString, "/", "-", -1)
+	uniqueDir := base32.StdEncoding.EncodeToString(nameData)
+	uniqueDir = uniqueDir[:len(uniqueDir)-6]
 
-	var subdir string
-	if infrastructure {
-		subdir = infraName
-	} else  {
-		subdir = userCreatedName
+	var subDir string
+	if infra {
+		subDir = infraName
+	} else {
+		subDir = userCreatedName
 	}
 
-        err = os.Mkdir(filepath.Join(basePath, subdir, randString), 0700)
-        if err != nil {
-                return
-        }
+	dir := filepath.Join(basePath, subDir, uniqueDir)
+	file := filepath.Join(dir, filename)
 
-        err = ioutil.WriteFile(filepath.Join(basePath, subdir, randString, filename), data, 0600)
+	err = os.Mkdir(dir, 0744)
+	if err != nil {
+		return
+	}
 
-        if err != nil {
-                return
-        }
+	err = ioutil.WriteFile(file, data, 0644)
 
+	if err != nil {
+		return
+	}
 
+	log.Print("Saved: ", file)
 
-        path = filepath.Join(baseUrl, subdir, randString, filename)
-        log.Print("Saved: ", path)
+	return
 
-        return
 }
-

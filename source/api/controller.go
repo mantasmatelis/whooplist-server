@@ -23,25 +23,9 @@ func GetUser(w http.ResponseWriter, req *http.Request, ctx Context) {
 
 func UpdateUser(w http.ResponseWriter, req *http.Request, ctx Context) {
 	ensure(ctx.Body != nil && ctx.Session != nil, 400)
-	user := ctx.Body.User
 
-	user.Id = ctx.Session.UserId
-
-	var oldUser *whooplist.User
-	var err error
-	if user.Password != "" {
-		oldUser, err = whooplist.CheckUpdateUser(user.Email, user.OldPassword)
-	} else {
-		oldUser, err = whooplist.GetUserData(ctx.Session.UserId, "")
-	}
+	err := whooplist.UpdateUser(ctx.User, &ctx.Body.User)
 	if_error(err)
-	ensure(oldUser != nil, 403)
-	ensure(user.Email == oldUser.Email && user.Id == oldUser.Id, 400)
-
-	user.Role = oldUser.Role
-	user.PasswordHash = oldUser.PasswordHash
-
-	whooplist.UpdateUser(user)
 }
 
 func CreateUser(w http.ResponseWriter, req *http.Request, ctx Context) {
@@ -49,8 +33,9 @@ func CreateUser(w http.ResponseWriter, req *http.Request, ctx Context) {
 
 	user := ctx.Body.User
 
-	ensure(user.Email != "" && user.Name != "" && user.Password != "", 400)
-	exists, err := whooplist.UserExists(user.Email)
+	ensure(user.Email != nil && user.Name != nil && user.Password != nil, 400)
+	ensure(*user.Email != "" && *user.Name != "" && *user.Password != "", 400)
+	exists, err := whooplist.UserExists(*user.Email)
 	if_error(err)
 	ensure(!exists, 409)
 
@@ -60,8 +45,8 @@ func CreateUser(w http.ResponseWriter, req *http.Request, ctx Context) {
 func LoginUser(w http.ResponseWriter, req *http.Request, ctx Context) {
 	ensure(ctx.Body != nil, 400)
 
-	user, session, err := whooplist.LoginUser(ctx.Body.User.Email,
-		ctx.Body.User.Password)
+	user, session, err := whooplist.LoginUser(*ctx.Body.User.Email,
+		*ctx.Body.User.Password)
 	if_error(err)
 	ensure(user != nil && session != nil, 403)
 
@@ -106,14 +91,14 @@ func CreateUserList(w http.ResponseWriter, req *http.Request, ctx Context) {
 	ensure(ctx.Body != nil, 400)
 	listId := parseInt64(ctx.Params["ListId"])
 
-	if_error(whooplist.PutUserList(ctx.User.Id, listId, ctx.Body.Places))
+	if_error(whooplist.PutUserList(*ctx.User.Id, listId, ctx.Body.Places))
 }
 
 func DeleteUserList(w http.ResponseWriter, req *http.Request, ctx Context) {
 	ensure(ctx.User != nil, 403)
 
 	listId := parseInt64(ctx.Params["ListId"])
-	if_error(whooplist.DeleteUserList(ctx.User.Id, listId))
+	if_error(whooplist.DeleteUserList(*ctx.User.Id, listId))
 }
 
 func GetUserFriends(w http.ResponseWriter, req *http.Request, ctx Context) {
@@ -138,7 +123,7 @@ func GetListTypes(w http.ResponseWriter, req *http.Request, ctx Context) {
 func GetWlCoordinate(w http.ResponseWriter, req *http.Request, ctx Context) {
 	userId := int64(0)
 	if ctx.User != nil {
-		userId = ctx.User.Id
+		userId = *ctx.User.Id
 	}
 
 	listId := parseInt64(ctx.Params["ListId"])
@@ -171,7 +156,7 @@ func GetNewsfeedUpdate(w http.ResponseWriter, req *http.Request, ctx Context) {
 	latestId := parseInt64(ctx.Params["LatestId"])
 
 	items, err := whooplist.GetNewsfeed(
-		ctx.User.Id, latestId, lat, long, radius)
+		*ctx.User.Id, latestId, lat, long, radius)
 	if_error(err)
 
 	writeObject(&items, w)
@@ -186,7 +171,7 @@ func GetNewsfeedOlder(w http.ResponseWriter, req *http.Request, ctx Context) {
 	earliestId := parseInt64(ctx.Params["LatestId"])
 
 	items, err := whooplist.GetNewsfeedEarlier(
-		ctx.User.Id, earliestId, lat, long, radius)
+		*ctx.User.Id, earliestId, lat, long, radius)
 	if_error(err)
 
 	writeObject(&items, w)

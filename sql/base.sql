@@ -80,6 +80,15 @@ CREATE TABLE wl.feed_item
   aux_int integer
 );
 
+CREATE TABLE wl.friend
+(
+  id serial NOT NULL PRIMARY KEY,
+  from_id integer REFERENCES wl.user(id),
+  to_id integer REFERENCES wl.user(id),
+  timestamp timestamp without time zone DEFAULT LOCALTIMESTAMP NOT NULL
+);
+CREATE INDEX friend_from_id ON wl.friend(user1)
+CREATE INDEX friend_to_id ON wl.friend(user2)
 
 CREATE TABLE wl.whooplist_item
 (

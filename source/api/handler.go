@@ -148,6 +148,7 @@ func ensure(condition bool, code int) {
 
 func if_error(err error) {
 	if err != nil {
+		ensure(err != whooplist.UserError, 400)
 		panic(apiError{code: 500, err: err})
 	}
 

@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"encoding/base64"
 	"errors"
+	"github.com/imdario/mergo"
 	_ "github.com/lib/pq"
 	"io"
 	"strconv"
@@ -13,6 +14,8 @@ import (
 )
 
 var UserError = errors.New("whooplist: user error")
+var WeakPassword = errors.New("whooplist: weak password error")
+var BadPassword = errors.New("whooplist: bad password error")
 
 /* Application global database connection pool */
 var db *sql.DB
@@ -21,6 +24,7 @@ var getUserDataStmt, createUserStmt, updateUserStmt, deleteUserStmt,
 	authUserStmt, loginUserVerifyStmt, loginUserStmt,
 	deleteSessionStmt, existsUserStmt, getUserListsStmt, getUserListStmt,
 	getUserListPlaceStmt, putUserListStmt, deleteUserListStmt,
+	getUserFriendsStmt, addUserFriendStmt, deleteUserFriendStmt,
 	getListTypesStmt, getWhooplistCoordinateStmt, getWhooplistLocationStmt,
 	addNewsfeedItemStmt, getNewsfeedStmt, getNewsfeedEarlierStmt,
 	getLocationStmt, getLocationCoordinateStmt, getPlaceStmt,
@@ -122,6 +126,25 @@ func prepare() (err error) {
 		return
 	}
 
+	/*getUserFriendsStmt, err = db.Prepare(
+		"SELECT from_id, to_id FROM wl.friend " +
+			"WHERE frome_id = $1 OR to_id = $1")
+	if err != nil {
+		return
+	}
+
+	addUserFriendStmt, err = db.Prepare(
+		"INSERT INTO wl.friend (from_id, to_id) VALUES ($1, $2);")
+	if err != nil {
+
+	}
+
+	deleteUserFriendStmt, err = db.Prepare(
+		"DELETE FROM wl.friend WHERE from_id = $1 AND to_id = $2;")
+	if err != nil {
+
+	} */
+
 	getListTypesStmt, err = db.Prepare(
 		"SELECT * FROM wl.list")
 	if err != nil {
@@ -189,7 +212,7 @@ func prepare() (err error) {
 	}
 
 	getPlaceStmt, err = db.Prepare(
-		"SELECT latitude, longitude, factual_id, name, address, locality, " +
+		"SELECT id, latitude, longitude, factual_id, name, address, locality, " +
 			"region, postcode, country, telephone, website, email " +
 			"FROM wl.place WHERE id = $1;")
 	if err != nil {
@@ -246,6 +269,10 @@ func Hash(username, password string) (hash string, err error) {
 	return
 }
 
+func CheckPassword(password string) bool {
+	return len(password) > 6
+}
+
 func Initialize() (err error) {
 	db, err = sql.Open("postgres",
 		"user=whooplist dbname=whooplist password=moteifae0ohcaiCo "+
@@ -284,6 +311,9 @@ func GetUserData(id int64, email string) (user *User, err error) {
 }
 
 func CreateUser(user *User) (err error) {
+	if !CheckPassword(*user.Password) {
+		return WeakPassword
+	}
 	if user.Picture != nil {
 		str, err := WriteFileBase64("profile.jpg", user.Picture, false)
 		if err != nil {
@@ -292,7 +322,7 @@ func CreateUser(user *User) (err error) {
 		user.Picture = &str
 	}
 
-	hash, err := Hash(user.Email, user.Password)
+	hash, err := Hash(*user.Email, *user.Password)
 
 	if err != nil {
 		return
@@ -304,7 +334,7 @@ func CreateUser(user *User) (err error) {
 	return
 }
 
-func CheckUpdateUser(email, password string) (user *User, err error) {
+/*func CheckUpdateUser(email, password string) (user *User, err error) {
 	hash, err := Hash(email, password)
 
 	if err != nil {
@@ -326,26 +356,79 @@ func CheckUpdateUser(email, password string) (user *User, err error) {
 		return
 	}
 	return
-}
+}*/
 
-func UpdateUser(user User) (err error) {
-	var userHash string
-	if user.Password != "" {
-		userHash, _ = Hash(user.Email, user.Password)
+/*
+
+	user := ctx.Body.User
+	user.Id = &ctx.User.Id
+	user.Email = &ctx.User.Email
+
+	var oldUser *whooplist.User
+	var err error
+
+	if user.Password != nil {
+		ensure(whooplist.CheckPassword(user.Password), 409)
+		oldUser, err = whooplist.CheckUpdateUser(user.Email, user.Password)
 	} else {
-		userHash = user.PasswordHash
+		oldUser, err = whooplist.GetUserData(user.Id, "")
+	}
+	if_error(err)
+	ensure(oldUser != nil, 403)
+
+	user.Role = oldUser.Role
+	user.PasswordHash = oldUser.PasswordHash
+*/
+
+func UpdateUser(oldUser, user *User) (err error) {
+	user.Email = oldUser.Email
+	user.Id = oldUser.Id
+	user.PasswordHash = oldUser.PasswordHash
+	user.Role = oldUser.Role
+
+	if user.Password != nil {
+		if !CheckPassword(*user.Password) {
+			return WeakPassword
+		}
+
+		hash, err := Hash(*user.Email, *user.Password)
+		if err != nil {
+			return err
+		}
+
+		var blankUser User
+		res := loginUserVerifyStmt.QueryRow(user.Email, hash)
+		err = res.Scan(&blankUser.Id, &blankUser.Email, &blankUser.Name,
+			&blankUser.Fname, &blankUser.Lname, &blankUser.Birthday,
+			&blankUser.School, &blankUser.Picture, &blankUser.Gender,
+			&blankUser.Role)
+
+		if err == sql.ErrNoRows {
+			return BadPassword
+		}
+		user.PasswordHash, err = Hash(*user.Email, *user.Password)
+		if err != nil {
+			return err
+		}
 	}
 
-	if user.Picture != nil && !strings.HasPrefix(*user.Picture, "static.whooplist.com") {
+	if user.Picture != nil && !strings.HasPrefix(*user.Picture, baseUrl) {
 		str, err := WriteFileBase64("profile.jpg", user.Picture, false)
 		if err != nil {
 			return err
 		}
 		user.Picture = &str
 	}
+
+	err = mergo.Merge(user, *oldUser)
+
+	if err != nil {
+		return err
+	}
+
 	_, err = updateUserStmt.Exec(user.Email, user.Name, user.Fname,
 		user.Lname, user.Birthday, user.School, user.Picture,
-		user.Gender, userHash, user.Role)
+		user.Gender, user.PasswordHash, user.Role)
 	return
 }
 
@@ -421,7 +504,7 @@ func LoginUser(username, password string) (user *User,
 	we should identify if this is a problem. */
 
 	session = new(Session)
-	session.UserId = user.Id
+	session.UserId = *user.Id
 	session.Key = key
 
 	return
@@ -641,24 +724,6 @@ func getNewsfeed(rows *sql.Rows, inErr error) (items []FeedItem, err error) {
 	return
 }
 
-/*func GetLocation(locationId int) (location *Location, err error) {
-	location = new(Location)
-
-	res := getLocationStmt.QueryRow(locationId)
-	err = res.Scan(&location.Id, &location.Name)
-
-	if err != nil {
-		location = nil
-	}
-
-	return
-}
-
-func GetLocationCoordinate(lat, long float64) (locations []Location, err error) {
-	//TODO: Implement
-	return
-}*/
-
 func GetPlace(placeId int64) (place *Place, err error) {
 	place = new(Place)
 
@@ -667,6 +732,10 @@ func GetPlace(placeId int64) (place *Place, err error) {
 		&place.FactualId, &place.Name, &place.Address, &place.Locality,
 		&place.Region, &place.Postcode, &place.Country,
 		&place.Tel, &place.Website, &place.Email)
+
+	//latitude, longitude, factual_id, name, address, locality, " +
+	//		"region, postcode, country, telephone, website, email " +
+	//		"FROM wl.place WHERE id = $1;")
 
 	if err == sql.ErrNoRows {
 		return nil, nil
