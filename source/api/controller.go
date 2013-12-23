@@ -101,15 +101,37 @@ func DeleteUserList(w http.ResponseWriter, req *http.Request, ctx Context) {
 	if_error(whooplist.DeleteUserList(*ctx.User.Id, listId))
 }
 
-func GetUserFriends(w http.ResponseWriter, req *http.Request, ctx Context) {
+type UserFriendsResponse struct {
+	Followers []whooplist.User
+	Following []whooplist.User
+	Both      []whooplist.User
+}
 
+func GetUserFriends(w http.ResponseWriter, req *http.Request, ctx Context) {
+	userId := parseInt64(ctx.Params["UserId"])
+
+	followers, following, both, err := whooplist.GetUserFriends(userId)
+	if_error(err)
+
+	writeObject(UserFriendsResponse{followers, following, both}, w)
 }
 
 func AddUserFriend(w http.ResponseWriter, req *http.Request, ctx Context) {
+	ensure(ctx.User != nil, 403)
+	userId := parseInt64(ctx.Params["UserId"])
 
+	if_error(whooplist.AddUserFriend(*ctx.User.Id, userId))
 }
 
 func DeleteUserFriend(w http.ResponseWriter, req *http.Request, ctx Context) {
+	ensure(ctx.User != nil, 403)
+	userId := parseInt64(ctx.Params["UserId"])
+
+	if_error(whooplist.DeleteUserFriend(*ctx.User.Id, userId))
+}
+
+func SuggestUserFriends(w http.ResponseWriter, req *http.Request,
+	ctx Context) {
 
 }
 

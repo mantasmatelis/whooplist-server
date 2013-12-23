@@ -41,9 +41,10 @@ func main() {
 		route.Route{"DELETE", "/users/lists/:ListId", DeleteUserList},
 
 		/* User Friend Routes */
-		route.Route{"GET", "/friends", GetUserFriends},
-		route.Route{"PUT", "/friends/:OtherId", AddUserFriend},
-		route.Route{"DELETE", "/friends/:OtherId", DeleteUserFriend},
+		route.Route{"GET", "/users/:UserId/friends", GetUserFriends},
+		route.Route{"PUT", "/users/friends/:OtherId", AddUserFriend},
+		route.Route{"DELETE", "/users/friends/:OtherId", DeleteUserFriend},
+		route.Route{"GET", "/users/friends/suggestions", SuggestUserFriends},
 
 		/* Possible List Routes */
 		route.Route{"GET", "/listTypes", GetListTypes},
@@ -54,11 +55,11 @@ func main() {
 			GetWlCoordinate},
 
 		/* Newsfeed Routes */
-		route.Route{"GET", "/newsfeed/older/:Lat/:Long/:Radius/:EarliestId",
+		route.Route{"GET", "/feed/older/:Lat/:Long/:Radius/:EarliestId",
 			GetNewsfeedOlder},
-		route.Route{"GET", "/newsfeed/:Lat/:Long/:Radius/:LatestId",
+		route.Route{"GET", "/feed/:Lat/:Long/:Radius/:LatestId",
 			GetNewsfeedUpdate},
-		route.Route{"GET", "/newsfeed/:Lat/:Long/:Radius",
+		route.Route{"GET", "/feed/:Lat/:Long/:Radius",
 			GetNewsfeedNew},
 
 		/* Place Routes */

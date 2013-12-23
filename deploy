@@ -1,6 +1,6 @@
 #!/bin/bash
 
-./build
+./build || exit
 
 echo Copying...
 rsync -az ./api root@whooplist.com:/srv/www/api.whooplist.com/

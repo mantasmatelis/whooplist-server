@@ -87,8 +87,8 @@ CREATE TABLE wl.friend
   to_id integer REFERENCES wl.user(id),
   timestamp timestamp without time zone DEFAULT LOCALTIMESTAMP NOT NULL
 );
-CREATE INDEX friend_from_id ON wl.friend(user1)
-CREATE INDEX friend_to_id ON wl.friend(user2)
+CREATE INDEX friend_from_id ON wl.friend(from_id)
+CREATE INDEX friend_to_id ON wl.friend(to_id)
 
 CREATE TABLE wl.whooplist_item
 (

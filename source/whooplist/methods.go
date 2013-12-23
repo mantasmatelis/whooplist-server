@@ -9,6 +9,7 @@ import (
 	"github.com/imdario/mergo"
 	_ "github.com/lib/pq"
 	"io"
+	"log"
 	"strconv"
 	"strings"
 )
@@ -126,9 +127,18 @@ func prepare() (err error) {
 		return
 	}
 
-	/*getUserFriendsStmt, err = db.Prepare(
-		"SELECT from_id, to_id FROM wl.friend " +
-			"WHERE frome_id = $1 OR to_id = $1")
+	getUserFriendsStmt, err = db.Prepare(
+		"SELECT SUM(direction), id, email, name, fname, lname, birthday, " +
+			"school, picture, gender, role FROM " +
+			"(SELECT 1 AS direction, wl.user.id AS id, email, name, fname, " +
+			"lname, birthday, school, picture, gender, role FROM wl.user " +
+			"JOIN wl.friend ON wl.user.id = friend.from_id " +
+			"WHERE friend.to_id = $1 UNION " +
+			"SELECT 2 AS direction, wl.user.id, email, name, fname, lname, " +
+			"birthday, school, picture, gender, role FROM wl.user " +
+			"JOIN wl.friend ON wl.user.id = friend.to_id " +
+			"WHERE friend.from_id = $1) AS bothDirections GROUP BY id, " +
+			"email, name, fname, lname, birthday, school, picture, gender, role;")
 	if err != nil {
 		return
 	}
@@ -143,7 +153,7 @@ func prepare() (err error) {
 		"DELETE FROM wl.friend WHERE from_id = $1 AND to_id = $2;")
 	if err != nil {
 
-	} */
+	}
 
 	getListTypesStmt, err = db.Prepare(
 		"SELECT * FROM wl.list")
@@ -153,7 +163,7 @@ func prepare() (err error) {
 
 	/* Note, the constant below is 360 / (earth's radius in meters) */
 	getWhooplistCoordinateStmt, err = db.Prepare(
-		"SELECT SUM(5 - rank) AS score, place.id, place.latitude, place.longitude, " +
+		"SELECT SUM(10 - rank) AS score, place.id, place.latitude, place.longitude, " +
 			"place.factual_id, place.name, place.address, " +
 			"place.locality, place.region, place.postcode, place.country, " +
 			"place.telephone, place.website, place.email " +
@@ -333,52 +343,6 @@ func CreateUser(user *User) (err error) {
 		user.Gender, hash, user.Role)
 	return
 }
-
-/*func CheckUpdateUser(email, password string) (user *User, err error) {
-	hash, err := Hash(email, password)
-
-	if err != nil {
-		return
-	}
-
-	user = new(User)
-	res := loginUserVerifyStmt.QueryRow(email, hash)
-	err = res.Scan(&user.Id, &user.Email, &user.Name, &user.Fname,
-		&user.Lname, &user.Birthday, &user.School, &user.Picture,
-		&user.Gender, &user.Role)
-	if err == sql.ErrNoRows {
-		user = nil
-		err = nil
-		return
-	}
-	if err != nil {
-		user = nil
-		return
-	}
-	return
-}*/
-
-/*
-
-	user := ctx.Body.User
-	user.Id = &ctx.User.Id
-	user.Email = &ctx.User.Email
-
-	var oldUser *whooplist.User
-	var err error
-
-	if user.Password != nil {
-		ensure(whooplist.CheckPassword(user.Password), 409)
-		oldUser, err = whooplist.CheckUpdateUser(user.Email, user.Password)
-	} else {
-		oldUser, err = whooplist.GetUserData(user.Id, "")
-	}
-	if_error(err)
-	ensure(oldUser != nil, 403)
-
-	user.Role = oldUser.Role
-	user.PasswordHash = oldUser.PasswordHash
-*/
 
 func UpdateUser(oldUser, user *User) (err error) {
 	user.Email = oldUser.Email
@@ -615,6 +579,56 @@ func PutUserList(userId, listId int64, places []int64) (err error) {
 
 func DeleteUserList(userId, listId int64) (err error) {
 	_, err = deleteUserListStmt.Exec(userId, listId)
+	return
+}
+
+/* id, email, name, fname, lname, birthday, " +
+"school, picture, gender, password_hash, role */
+
+func GetUserFriends(userId int64) (followers,
+	following, both []User, err error) {
+
+	rows, err := getUserFriendsStmt.Query(userId)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			err = nil
+		}
+		return
+	}
+
+	followers = make([]User, 0, 10)
+	following = make([]User, 0, 10)
+	both = make([]User, 0, 10)
+
+	for rows.Next() {
+		var curr User
+		var direction int
+		err = rows.Scan(direction, &curr.Id, &curr.Email, &curr.Name,
+			&curr.Fname, &curr.Lname, &curr.Birthday, &curr.School,
+			&curr.Picture, &curr.Gender)
+
+		log.Print(direction)
+		log.Print(curr)
+
+		if err != nil {
+			followers = nil
+			following = nil
+			both = nil
+			return
+		}
+		//users = append(users, curr)
+	}
+	return
+}
+
+func AddUserFriend(fromId, toId int64) (err error) {
+	_, err = addUserFriendStmt.Exec(fromId, toId)
+	return
+}
+
+func DeleteUserFriend(fromId, toId int64) (err error) {
+	_, err = deleteUserFriendStmt.Exec(fromId, toId)
 	return
 }
 

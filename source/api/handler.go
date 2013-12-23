@@ -57,9 +57,10 @@ func panicHandler(handler http.Handler) http.Handler {
 }
 
 type RequestBody struct {
-	Key    string
-	User   whooplist.User
-	Places []int64
+	Key      string
+	User     whooplist.User
+	Places   []int64
+	Contacts []string
 }
 
 type Context struct {
