@@ -4,6 +4,46 @@
 		"selected_items":
 		[
 			[
+				"addUser",
+				"AddUserFriend	err error ƒ"
+			],
+			[
+				"Q",
+				"Query	*sql.Rows, error ƒ"
+			],
+			[
+				"Enco",
+				"EncodeToString	string ƒ"
+			],
+			[
+				"Pass",
+				"PasswordHash	string ν"
+			],
+			[
+				"Respon",
+				"ResponseWriter	interface ¡"
+			],
+			[
+				"Last",
+				"LastUse	time.Time ν"
+			],
+			[
+				"Use",
+				"UserError	 ν"
+			],
+			[
+				"c",
+				"context	Context ν"
+			],
+			[
+				"if",
+				"if_error	 ƒ"
+			],
+			[
+				"fa",
+				"factualPlace	struct ʈ"
+			],
+			[
 				"err",
 				"err"
 			],
@@ -19,7 +59,31 @@
 			"file": "source/whooplist/methods.go",
 			"settings":
 			{
-				"buffer_size": 16186,
+				"buffer_size": 19277,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "sql/base.sql",
+			"settings":
+			{
+				"buffer_size": 3867,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "source/whooplist/file.go",
+			"settings":
+			{
+				"buffer_size": 1403,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "/Users/mantas/test-go/test.go",
+			"settings":
+			{
+				"buffer_size": 718,
 				"line_ending": "Unix"
 			}
 		},
@@ -27,15 +91,7 @@
 			"file": "source/whooplist/factual.go",
 			"settings":
 			{
-				"buffer_size": 1567,
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "source/utilities/api-test/factual.go",
-			"settings":
-			{
-				"buffer_size": 3091,
+				"buffer_size": 3129,
 				"line_ending": "Unix"
 			}
 		},
@@ -51,15 +107,18 @@
 			"file": "source/api/controller.go",
 			"settings":
 			{
-				"buffer_size": 5915,
+				"buffer_size": 5943,
 				"line_ending": "Unix"
 			}
 		},
 		{
+			"contents": "package whooplist\n\n\n	Id       *int64\n	Email    *string\n	Name     *string\n	Fname    *string    `json:\",omitempty\"`\n	Lname    *string    `json:\",omitempty\"`\n	Birthday *time.Time `json:\",omitempty\"`\n	School   *string    `json:\",omitempty\"`\n	Picture  *string    `json:\",omitempty\"`\n	Gender   *int64     `json:\",omitempty\"` /* Follows ISO/IEC 5218 */\n\n	/* Private (i.e. not passed to client ever) */\n	PasswordHash string `json:\"-\"`\n	Role         byte   `json:\"-\"`\n\n	/* For the client to pass to user only */\n	Password    *string `json:\",omitempty\"`\n	OldPassword *string `json:\",omitempty\"`\n}\n\n/* Sessions offer long-term authenticated communication between\n   server and client. Identity is proved with a long key\n   (that must be kept absolutely secret at all times).\n   Sessions are signed out after 28 days of inactivity\n   (not making requests under the key) for security. */\ntype Session struct {\n	Id       int64\n	UserId   int64\n	Key      string\n	LastAuth time.Time\n	LastUse  time.Time\n}\n\n/**/\ntype Place struct {\n	Id int64\n\n	Latitude  float64\n	Longitude float64\n\n	FactualId string\n\n	Name     string\n	Address  string\n	Locality string\n	Region   string\n	Postcode string\n	Country  string\n	Tel      string\n	Website  string\n	Email    string\n\n	Score int64\n}\n\ntype Location struct {\n	Id   int\n	Name string\n}\n\ntype List struct {\n	Id       int64\n	Name     string\n	Icon     string\n	Children []int64\n}\n\ntype ListItem struct {\n	Id      int64 `json:\"-\"`\n	PlaceId int64\n	ListId  int64 `json:\",omitempty\"`\n	UserId  int64 `json:\",omitempty\"`\n	Rank    int\n}\n\ntype FeedItem struct {\n	/* General Items */\n	Id        int\n	Timestamp time.Time\n\n	/* The following group of items do not all\n	   have to be present and may be 0 */\n	UserId    int\n	Latitude  float64\n	Longitude float64\n	PlaceId   int\n	ListId    int\n	Picture   string\n\n	/* Type Describes what the Newsfeed event is\n	* (No UserId) 1: Trending, 2: NewInWhooplist (AuxInt: Position)\n	*    (UserId) 3: Welcome, 4: WhyNotAdd,\n	          ... 5: NewInUserlist (AuxInt: Position),\n	*         ... 6: Visiting 7: ProfilePictureUpdated,\n	*         ... 8: School Updated (AuxString: Name),\n	*         ... 9: FriendAdded (AuxInt: Id, AuxString: Name)\n	*/\n	Type      int64\n	AuxString string\n	AuxInt    int64\n}\n\n/* The following four structures are not database tables\n   and are for convenience purposes only */\n\ntype UserList struct {\n	UserId int64\n	ListId int64\n	Items  []ListItem\n}\n\ntype Whooplist struct {\n	ListId int64\n	Items  []ListItem\n}\n\ntype WhooplistCoordinate struct {\n	Whooplist\n	Latitude  int\n	Longitude int\n	Radius    int\n}\n\ntype WhooplistLocation struct {\n	Whooplist\n	LocationId int\n}\n",
 			"file": "source/whooplist/structures.go",
+			"file_size": 2663,
+			"file_write_time": 130315218230000000,
 			"settings":
 			{
-				"buffer_size": 2579,
+				"buffer_size": 2625,
 				"line_ending": "Unix"
 			}
 		},
@@ -67,7 +126,23 @@
 			"file": "source/api/application.go",
 			"settings":
 			{
-				"buffer_size": 2230,
+				"buffer_size": 2269,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "/Users/mantas/Library/Application Support/Sublime Text 3/Packages/GoSublime/CHANGELOG.md",
+			"settings":
+			{
+				"buffer_size": 29796,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "source/api/handler.go",
+			"settings":
+			{
+				"buffer_size": 3857,
 				"line_ending": "Unix"
 			}
 		}
@@ -75,17 +150,9 @@
 	"build_system": "",
 	"command_palette":
 	{
-		"height": 347.0,
+		"height": 387.0,
 		"selected_items":
 		[
-			[
-				"packa",
-				"Package Control: Install Package"
-			],
-			[
-				"Package ",
-				"Package Control: Install Package"
-			],
 			[
 				":w",
 				":w - Save"
@@ -93,9 +160,17 @@
 			[
 				":",
 				":w - Save"
+			],
+			[
+				"packa",
+				"Package Control: Install Package"
+			],
+			[
+				"Package ",
+				"Package Control: Install Package"
 			]
 		],
-		"width": 449.0
+		"width": 467.0
 	},
 	"console":
 	{
@@ -116,12 +191,17 @@
 	},
 	"file_history":
 	[
+		"/Users/mantas/Documents/whooplist/build",
+		"/Users/mantas/Documents/whooplist/source/api/file.go",
+		"/Users/mantas/Documents/whooplist/source/whooplist/file.go",
+		"/Users/mantas/Documents/whooplist/sql/transform.py",
+		"/Users/mantas/Documents/whooplist/sql/base.sql",
+		"/Users/mantas/test-go/test.go",
+		"/Users/mantas/Documents/whooplist/source/utilities/api-test/factual.go",
 		"/Users/mantas/Library/Application Support/Sublime Text 3/Packages/GoSublime/CHANGELOG.md",
 		"/Users/mantas/Documents/whooplist/source/whooplist/structures.go",
 		"/Users/mantas/Documents/whooplist/source/api/handler.go",
-		"/Users/mantas/Documents/whooplist/source/api/file.go",
 		"/Users/mantas/Documents/whooplist/source/api/api.log",
-		"/Users/mantas/Documents/whooplist/sql/base.sql",
 		"/Users/mantas/Documents/whooplist/source/whooplist/.sublime-project",
 		"/Users/mantas/Documents/whooplist/go.sublime-build.json",
 		"/Users/mantas/Documents/whooplist/.sublime-build.json",
@@ -129,7 +209,7 @@
 	],
 	"find":
 	{
-		"height": 22.0
+		"height": 35.0
 	},
 	"find_in_files":
 	{
@@ -140,9 +220,29 @@
 	},
 	"find_state":
 	{
-		"case_sensitive": false,
+		"case_sensitive": true,
 		"find_history":
 		[
+			"updateU",
+			"getPlace",
+			"log",
+			"log.",
+			"log",
+			" UserList",
+			"UserList ",
+			"UserList",
+			"getUserListPlaceStmt",
+			"context",
+			"GetWhooplistCo",
+			"tel,",
+			"tel",
+			"telephone",
+			"tel, ",
+			"if_error(err, 500)",
+			"if_error(e",
+			"deleteUser",
+			"account",
+			"\"",
 			"\n}",
 			"er"
 		],
@@ -152,6 +252,9 @@
 		"regex": false,
 		"replace_history":
 		[
+			"ctx",
+			"if_error(err)",
+			"'"
 		],
 		"reverse": false,
 		"show_context": true,
@@ -162,7 +265,7 @@
 	"groups":
 	[
 		{
-			"selected": 3,
+			"selected": 0,
 			"sheets":
 			[
 				{
@@ -171,15 +274,15 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 16186,
+						"buffer_size": 19277,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								8145,
-								8145
+								14961,
+								14961
 							]
 						],
 						"settings":
@@ -190,69 +293,132 @@
 							"wrap_width": 80
 						},
 						"translation.x": 0.0,
-						"translation.y": 9268.0,
+						"translation.y": 8050.0,
 						"zoom_level": 1.0
 					},
+					"stack_index": 5,
 					"type": "text"
 				},
 				{
 					"buffer": 1,
-					"file": "source/whooplist/factual.go",
+					"file": "sql/base.sql",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 1567,
+						"buffer_size": 3867,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								518,
-								1567
+								3409,
+								3409
 							]
 						],
 						"settings":
 						{
-							"syntax": "Packages/Go/Go.tmLanguage",
-							"word_wrap": true
+							"syntax": "Packages/SQL/SQL.tmLanguage",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 322.0,
+						"translation.y": 1163.0,
 						"zoom_level": 1.0
 					},
+					"stack_index": 8,
 					"type": "text"
 				},
 				{
 					"buffer": 2,
-					"file": "source/utilities/api-test/factual.go",
+					"file": "source/whooplist/file.go",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 3091,
+						"buffer_size": 1403,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								2281,
-								2281
+								1047,
+								1047
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/GoSublime/syntax/GoSublime-Go.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 433.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 9,
+					"type": "text"
+				},
+				{
+					"buffer": 3,
+					"file": "/Users/mantas/test-go/test.go",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 718,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								476,
+								476
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/GoSublime/syntax/GoSublime-Go.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 6,
+					"type": "text"
+				},
+				{
+					"buffer": 4,
+					"file": "source/whooplist/factual.go",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 3129,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								2718,
+								2790
 							]
 						],
 						"settings":
 						{
 							"syntax": "Packages/Go/Go.tmLanguage",
+							"translate_tabs_to_spaces": false,
 							"word_wrap": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 1027.0,
+						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
+					"stack_index": 10,
 					"type": "text"
 				},
 				{
-					"buffer": 3,
+					"buffer": 5,
 					"file": "/Users/mantas/Library/Application Support/Sublime Text 3/Packages/GoSublime/USAGE.md",
 					"semi_transient": false,
 					"settings":
@@ -274,79 +440,10 @@
 							"translate_tabs_to_spaces": false
 						},
 						"translation.x": 0.0,
-						"translation.y": 240.0,
+						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"type": "text"
-				}
-			]
-		},
-		{
-			"selected": 0,
-			"sheets":
-			[
-				{
-					"buffer": 4,
-					"file": "source/api/controller.go",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 5915,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								5305,
-								5305
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/Go/Go.tmLanguage",
-							"translate_tabs_to_spaces": false,
-							"word_wrap": true,
-							"wrap_width": 80
-						},
-						"translation.x": 0.0,
-						"translation.y": 3298.0,
-						"zoom_level": 1.0
-					},
-					"type": "text"
-				}
-			]
-		},
-		{
-			"selected": 0,
-			"sheets":
-			[
-				{
-					"buffer": 5,
-					"file": "source/whooplist/structures.go",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 2579,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								1075,
-								1075
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/Go/Go.tmLanguage",
-							"translate_tabs_to_spaces": false
-						},
-						"translation.x": 0.0,
-						"translation.y": 501.0,
-						"zoom_level": 1.0
-					},
+					"stack_index": 7,
 					"type": "text"
 				}
 			]
@@ -357,19 +454,92 @@
 			[
 				{
 					"buffer": 6,
-					"file": "source/api/application.go",
+					"file": "source/api/controller.go",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 2230,
+						"buffer_size": 5943,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								1279,
-								1279
+								3567,
+								3567
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Go/Go.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": false,
+							"word_wrap": true,
+							"wrap_width": 80
+						},
+						"translation.x": 0.0,
+						"translation.y": 1358.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 0,
+					"type": "text"
+				}
+			]
+		},
+		{
+			"selected": 0,
+			"sheets":
+			[
+				{
+					"buffer": 7,
+					"file": "source/whooplist/structures.go",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 2625,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								2248,
+								2248
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Go/Go.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 4,
+					"type": "text"
+				}
+			]
+		},
+		{
+			"selected": 0,
+			"sheets":
+			[
+				{
+					"buffer": 8,
+					"file": "source/api/application.go",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 2269,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								743,
+								787
 							]
 						],
 						"settings":
@@ -380,9 +550,68 @@
 							"wrap_width": 80
 						},
 						"translation.x": 0.0,
-						"translation.y": 598.0,
+						"translation.y": 370.0,
 						"zoom_level": 1.0
 					},
+					"stack_index": 1,
+					"type": "text"
+				},
+				{
+					"buffer": 9,
+					"file": "/Users/mantas/Library/Application Support/Sublime Text 3/Packages/GoSublime/CHANGELOG.md",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 29796,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								160,
+								160
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Markdown/Markdown.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 3,
+					"type": "text"
+				},
+				{
+					"buffer": 10,
+					"file": "source/api/handler.go",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 3857,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								1594,
+								1594
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/GoSublime/syntax/GoSublime-Go.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 713.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 2,
 					"type": "text"
 				}
 			]
@@ -428,25 +657,33 @@
 		"cols":
 		[
 			0.0,
-			0.464123430271,
+			0.481635507566,
 			1.0
 		],
 		"rows":
 		[
 			0.0,
-			0.637383051171,
+			0.58867813455,
 			1.0
 		]
 	},
 	"menu_visible": true,
+	"output.GoSublime-main-output":
+	{
+		"height": 88.0
+	},
 	"output.MarGo-output":
 	{
 		"height": 94.0
 	},
+	"output.find_results":
+	{
+		"height": 0.0
+	},
 	"project": "whooplist.sublime-project",
 	"replace":
 	{
-		"height": 40.0
+		"height": 64.0
 	},
 	"save_all_on_build": true,
 	"select_file":
@@ -480,7 +717,7 @@
 	"show_open_files": false,
 	"show_tabs": true,
 	"side_bar_visible": true,
-	"side_bar_width": 125.0,
+	"side_bar_width": 231.0,
 	"status_bar_visible": true,
 	"template_settings":
 	{

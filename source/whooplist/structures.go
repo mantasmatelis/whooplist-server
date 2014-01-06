@@ -17,7 +17,7 @@ type User struct {
 
 	/* Private (i.e. not passed to client ever) */
 	PasswordHash string `json:"-"`
-	Role         byte   `json:"-"`
+	Role         string `json:"-"`
 
 	/* For the client to pass to user only */
 	Password    *string `json:",omitempty"`

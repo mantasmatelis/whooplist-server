@@ -133,6 +133,14 @@ func DeleteUserFriend(w http.ResponseWriter, req *http.Request, ctx Context) {
 func SuggestUserFriends(w http.ResponseWriter, req *http.Request,
 	ctx Context) {
 
+	ensure(ctx.User != nil, 403)
+
+	friends, err := whooplist.SuggestUserFriends(*ctx.User.Id,
+		ctx.Body.Contacts)
+
+	if_error(err)
+
+	writeObject(&friends, w)
 }
 
 func GetListTypes(w http.ResponseWriter, req *http.Request, ctx Context) {

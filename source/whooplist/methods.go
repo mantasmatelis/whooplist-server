@@ -25,11 +25,12 @@ var getUserDataStmt, createUserStmt, updateUserStmt, deleteUserStmt,
 	authUserStmt, loginUserVerifyStmt, loginUserStmt,
 	deleteSessionStmt, existsUserStmt, getUserListsStmt, getUserListStmt,
 	getUserListPlaceStmt, putUserListStmt, deleteUserListStmt,
-	getUserFriendsStmt, addUserFriendStmt, deleteUserFriendStmt,
-	getListTypesStmt, getWhooplistCoordinateStmt, getWhooplistLocationStmt,
-	addNewsfeedItemStmt, getNewsfeedStmt, getNewsfeedEarlierStmt,
-	getLocationStmt, getLocationCoordinateStmt, getPlaceStmt,
-	getPlaceByFactualStmt, addPlaceStmt, updatePlaceStmt *sql.Stmt
+	suggestUserFriendsStmt, getUserFriendsStmt, addUserFriendStmt,
+	deleteUserFriendStmt, getListTypesStmt, getWhooplistCoordinateStmt,
+	getWhooplistLocationStmt, addNewsfeedItemStmt, getNewsfeedStmt,
+	getNewsfeedEarlierStmt, getLocationStmt, getLocationCoordinateStmt,
+	getPlaceStmt, getPlaceByFactualStmt, addPlaceStmt,
+	updatePlaceStmt *sql.Stmt
 
 func prepare() (err error) {
 	getUserDataStmt, err = db.Prepare(
@@ -129,7 +130,7 @@ func prepare() (err error) {
 
 	getUserFriendsStmt, err = db.Prepare(
 		"SELECT SUM(direction), id, email, name, fname, lname, birthday, " +
-			"school, picture, gender, role FROM " +
+			"school, picture, gender FROM " +
 			"(SELECT 1 AS direction, wl.user.id AS id, email, name, fname, " +
 			"lname, birthday, school, picture, gender, role FROM wl.user " +
 			"JOIN wl.friend ON wl.user.id = friend.from_id " +
@@ -604,12 +605,20 @@ func GetUserFriends(userId int64) (followers,
 	for rows.Next() {
 		var curr User
 		var direction int
-		err = rows.Scan(direction, &curr.Id, &curr.Email, &curr.Name,
+		err = rows.Scan(&direction, &curr.Id, &curr.Email, &curr.Name,
 			&curr.Fname, &curr.Lname, &curr.Birthday, &curr.School,
 			&curr.Picture, &curr.Gender)
 
 		log.Print(direction)
 		log.Print(curr)
+
+		if direction == 1 {
+			followers = append(followers, curr)
+		} else if direction == 2 {
+			following = append(following, curr)
+		} else if direction == 3 {
+			both = append(both, curr)
+		}
 
 		if err != nil {
 			followers = nil
@@ -630,6 +639,36 @@ func AddUserFriend(fromId, toId int64) (err error) {
 func DeleteUserFriend(fromId, toId int64) (err error) {
 	_, err = deleteUserFriendStmt.Exec(fromId, toId)
 	return
+}
+
+func SuggestUserFriends(userId int64,
+	contacts []string) (users []User, err error) {
+
+	rows, err := suggestUserFriendsStmt.Query(userId, contacts)
+
+	if err != nil {
+		return
+	}
+
+	users = make([]User, 0, 20)
+
+	for rows.Next() {
+		var curr User
+
+		err = rows.Scan(&curr.Id, &curr.Email, &curr.Name,
+			&curr.Fname, &curr.Lname, &curr.Birthday, &curr.School,
+			&curr.Picture, &curr.Gender)
+
+		if err != nil {
+			rows = nil
+			return
+		}
+
+		users = append(users, curr)
+	}
+
+	return
+
 }
 
 func GetListTypes() (lists []List, err error) {
@@ -682,9 +721,9 @@ func GetWhooplistCoordinate(userId, listId int64, page int32, lat, long,
 	for rows.Next() {
 		var place Place
 
-		err = rows.Scan(&place.Score, &place.Id, &place.Latitude, &place.Longitude,
-			&place.FactualId, &place.Name, &place.Address, &place.Locality,
-			&place.Region, &place.Postcode, &place.Country,
+		err = rows.Scan(&place.Score, &place.Id, &place.Latitude,
+			&place.Longitude, &place.FactualId, &place.Name, &place.Address,
+			&place.Locality, &place.Region, &place.Postcode, &place.Country,
 			&place.Tel, &place.Website, &place.Email)
 
 		places = append(places, place)

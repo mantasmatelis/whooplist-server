@@ -25,7 +25,7 @@ CREATE TABLE wl.session
   last_auth timestamp without time zone DEFAULT LOCALTIMESTAMP NOT NULL,
   last_use timestamp without time zone DEFAULT LOCALTIMESTAMP NOT NULL
 );
-CREATE INDEX session_key ON wl.session(key);
+CREATE INDEX session_key_index ON wl.session(key);
 
 CREATE TABLE wl.list
 (
@@ -87,8 +87,8 @@ CREATE TABLE wl.friend
   to_id integer REFERENCES wl.user(id),
   timestamp timestamp without time zone DEFAULT LOCALTIMESTAMP NOT NULL
 );
-CREATE INDEX friend_from_id ON wl.friend(from_id)
-CREATE INDEX friend_to_id ON wl.friend(to_id)
+CREATE INDEX friend_from_id ON wl.friend(from_id);
+CREATE INDEX friend_to_id ON wl.friend(to_id);
 
 CREATE TABLE wl.whooplist_item
 (
@@ -99,6 +99,27 @@ CREATE TABLE wl.whooplist_item
 );
 CREATE INDEX whooplist_item_list_id_index ON wl.whooplist_item(list_id);
 CREATE INDEX whooplist_item_place_id_index ON wl.whooplist_item(place_id);
+
+INSERT INTO wl.user
+  (id, email, name, password_hash, role) VALUES
+  (1, 'base@whooplist.com', 'Base Data', '', 'b');
+
+INSERT INTO wl.user
+  (id, email, name, fname, lname, school, password_hash, role) VALUES
+  (11, 'mantas@whooplist.com', 'Mantas Matelis', 'Mantas', 'Matelis',
+    'University of Waterloo', 'P', 'a'),
+  (12, 'dev@whooplist.com', 'Dev Chakraborty', 'Dev', 'Chakraborty',
+    'Western University', 'P', 'a'),
+  (13, 'jitesh@whooplist.com', 'Jitesh Vyas', 'Jitesh', 'Vyas',
+    'Western University', 'P', 'a');
+
+INSERT INTO wl.friend
+  (from_id, to_id) VALUES
+  (11, 12), (11, 13),
+  (12, 11), (12, 13),
+  (13, 11), (13, 12);
+
+ALTER SEQUENCE wl.user_id_seq RESTART WITH 10000;
 
 INSERT INTO wl.list (id, name, children, icon) VALUES
 	(1, 'Eat', '6,7,8,9,10', '$list_icons/eat.svg$'),
@@ -124,3 +145,29 @@ INSERT INTO wl.list (id, name, children, icon) VALUES
 	(20, 'Recreation', '', '$list_icons/recreation.svg$'),
 	(21, 'Hike', '', '$list_icons/hike.svg$'),
 	(22, 'Meet', '', '$list_icons/meet.evg$');
+
+GRANT ALL ON wl.user, wl.session, wl.list, wl.place, wl.list_item,
+  wl.feed_item, wl.friend, wl.whooplist_item TO whooplist;
+
+
+-- BEGIN TEST DATA
+
+INSERT INTO wl.user
+  (id, email, name, password_hash, role) VALUES
+  (1001, 'test1@whooplist.com', 'Test 1', 'P', 't'),
+  (1002, 'test2@whooplist.com', 'Test 2', 'P', 't'),
+  (1003, 'test3@whooplist.com', 'Test 3', 'P', 't'),
+  (1004, 'test4@whooplist.com', 'Test 4', 'P', 't'),
+  (1005, 'test5@whooplist.com', 'Test 5', 'P', 't'),
+  (1006, 'test6@whooplist.com', 'Test 6', 'P', 't'),
+  (1007, 'test7@whooplist.com', 'Test 7', 'P', 't'),
+  (1008, 'test8@whooplist.com', 'Test 8', 'P', 't'),
+  (1009, 'test9@whooplist.com', 'Test 9', 'P', 't'),
+  (1010, 'test10@whooplist.com', 'Test 10', 'P', 't');
+
+INSERT INTO wl.friend
+  (from_id, to_id) VALUES
+  (1001, 1002), (1001, 1003), (1001, 1004), (1001, 1005), (1001, 1006), (1001, 1007), (1001, 1008), (1001, 1009),
+  (1002, 1001), (1002, 1003), (1002, 1004),
+  (1003, 1001), (1003, 1008), (1003, 1009),
+  (1004, 1005), (1004, 1007);
