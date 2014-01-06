@@ -107,11 +107,11 @@ INSERT INTO wl.user
 INSERT INTO wl.user
   (id, email, name, fname, lname, school, password_hash, role) VALUES
   (11, 'mantas@whooplist.com', 'Mantas Matelis', 'Mantas', 'Matelis',
-    'University of Waterloo', 'P', 'a'),
+    'University of Waterloo', 'IV4r5xGvqeot7jWZiW4wUcnxUW/h4TEFzbT2COTpvv4=', 'a'),
   (12, 'dev@whooplist.com', 'Dev Chakraborty', 'Dev', 'Chakraborty',
-    'Western University', 'P', 'a'),
+    'Western University', 'qZggmcGnjNRlMUjwI4kWmCL56sJnQfvqA32JjtXPAuA=', 'a'),
   (13, 'jitesh@whooplist.com', 'Jitesh Vyas', 'Jitesh', 'Vyas',
-    'Western University', 'P', 'a');
+    'Western University', '4JM/xLOrGrbFG0CyEcN8bjKAL0wpAfHzqcexi0d0jHQ=', 'a');
 
 INSERT INTO wl.friend
   (from_id, to_id) VALUES

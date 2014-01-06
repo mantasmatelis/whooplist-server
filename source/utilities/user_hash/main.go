@@ -1,12 +1,10 @@
 package main
 
 import (
-	"encoding/base64"
 	"os"
 	"strings"
 	"fmt"
 	"bufio"
-	"code.google.com/p/go.crypto/scrypt"
 	"../../whooplist"
 )
 
@@ -23,7 +21,7 @@ func main() {
 
 	fmt.Println("Your hash is:")
 
-	hash, err = whooplist.Hash(username, password)
+	hash, _ := whooplist.Hash(username, password)
 
 	fmt.Println(hash)
 }

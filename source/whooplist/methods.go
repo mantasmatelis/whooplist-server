@@ -668,7 +668,6 @@ func SuggestUserFriends(userId int64,
 	}
 
 	return
-
 }
 
 func GetListTypes() (lists []List, err error) {
@@ -785,10 +784,6 @@ func GetPlace(placeId int64) (place *Place, err error) {
 		&place.FactualId, &place.Name, &place.Address, &place.Locality,
 		&place.Region, &place.Postcode, &place.Country,
 		&place.Tel, &place.Website, &place.Email)
-
-	//latitude, longitude, factual_id, name, address, locality, " +
-	//		"region, postcode, country, telephone, website, email " +
-	//		"FROM wl.place WHERE id = $1;")
 
 	if err == sql.ErrNoRows {
 		return nil, nil
