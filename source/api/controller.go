@@ -130,6 +130,30 @@ func DeleteUserFriend(w http.ResponseWriter, req *http.Request, ctx Context) {
 	if_error(whooplist.DeleteUserFriend(*ctx.User.Id, userId))
 }
 
+func NetworkUserFriends(w http.ResponseWriter, req *http.Request,
+	ctx Context) {
+
+	ensure(ctx.User != nil, 403)
+
+	friends, err := whooplist.NetworkUserFriends(*ctx.User.Id)
+
+	if_error(err)
+
+	writeObject(&friends, w)
+}
+
+func ContactsUserFriends(w http.ResponseWriter, req *http.Request,
+	ctx Context) {
+
+	ensure(ctx.User != nil, 403)
+
+	friends, err := whooplist.ContactsUserFriends(*ctx.User.Id,
+		ctx.Body.Contacts)
+	if_error(err)
+
+	writeObject(&friends, w)
+}
+
 func SuggestUserFriends(w http.ResponseWriter, req *http.Request,
 	ctx Context) {
 
@@ -137,7 +161,6 @@ func SuggestUserFriends(w http.ResponseWriter, req *http.Request,
 
 	friends, err := whooplist.SuggestUserFriends(*ctx.User.Id,
 		ctx.Body.Contacts)
-
 	if_error(err)
 
 	writeObject(&friends, w)
@@ -168,9 +191,6 @@ func GetWlCoordinate(w http.ResponseWriter, req *http.Request, ctx Context) {
 
 	writeObject(&list, w)
 }
-
-/*func GetWhooplistLocation(w http.ResponseWriter, req *http.Request) {
-}*/
 
 func GetNewsfeedNew(w http.ResponseWriter, req *http.Request, ctx Context) {
 	ctx.Params["LatestId"] = "-1"

@@ -81,16 +81,16 @@ type ListItem struct {
 
 type FeedItem struct {
 	/* General Items */
-	Id        int
+	Id        int64
 	Timestamp time.Time
 
 	/* The following group of items do not all
 	   have to be present and may be 0 */
-	UserId    int
+	UserId    int64
 	Latitude  float64
 	Longitude float64
-	PlaceId   int
-	ListId    int
+	PlaceId   int64
+	ListId    int64
 	Picture   string
 
 	/* Type Describes what the Newsfeed event is
@@ -98,13 +98,25 @@ type FeedItem struct {
 	*    (UserId) 3: Welcome, 4: WhyNotAdd,
 	          ... 5: NewInUserlist (AuxInt: Position),
 	*         ... 6: Visiting 7: ProfilePictureUpdated,
-	*         ... 8: School Updated (AuxString: Name),
+	*         ... 8: SchoolUpdated (AuxString: Name),
 	*         ... 9: FriendAdded (AuxInt: Id, AuxString: Name)
 	*/
 	Type      int64
 	AuxString string
 	AuxInt    int64
 }
+
+const (
+	NfTrending = iota
+	NfNewInWhooplist
+	NfWelcome
+	NfWhyNotAdd
+	NfNewInUserList
+	NfVisiting
+	NfProfilePictureUpdated
+	NfSchoolUpdated
+	NfFriendAdded
+)
 
 /* The following four structures are not database tables
    and are for convenience purposes only */

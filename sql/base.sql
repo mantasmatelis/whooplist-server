@@ -8,6 +8,7 @@ CREATE TABLE wl.user
   name text NOT NULL,
   fname text,
   lname text,
+  phone text,
   school text,
   birthday date,
   gender integer,
@@ -149,6 +150,9 @@ INSERT INTO wl.list (id, name, children, icon) VALUES
 GRANT ALL ON wl.user, wl.session, wl.list, wl.place, wl.list_item,
   wl.feed_item, wl.friend, wl.whooplist_item TO whooplist;
 
+GRANT ALL ON ALL SEQUENCES IN SCHEMA wl TO whooplist;
+
+-- BEGIN BASE PLACE DATA
 
 -- BEGIN TEST DATA
 

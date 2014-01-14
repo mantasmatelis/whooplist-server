@@ -44,7 +44,14 @@ func main() {
 		route.Route{"GET", "/users/:UserId/friends", GetUserFriends},
 		route.Route{"PUT", "/users/friends/:OtherId", AddUserFriend},
 		route.Route{"DELETE", "/users/friends/:OtherId", DeleteUserFriend},
-		route.Route{"GET", "/users/friends/suggestions", SuggestUserFriends},
+
+		/* User Friend Suggestion Routes */
+		route.Route{"GET", "/users/friends/suggestions",
+			SuggestUserFriends},
+		route.Route{"GET", "/users/friends/suggestions/contacts",
+			ContactsUserFriends},
+		route.Route{"GET", "/users/friends/suggestions/network",
+			NetworkUserFriends},
 
 		/* Possible List Routes */
 		route.Route{"GET", "/listTypes", GetListTypes},

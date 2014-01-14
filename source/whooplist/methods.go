@@ -7,6 +7,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"github.com/imdario/mergo"
+	"github.com/kisielk/sqlstruct"
 	_ "github.com/lib/pq"
 	"io"
 	"log"
@@ -25,7 +26,8 @@ var getUserDataStmt, createUserStmt, updateUserStmt, deleteUserStmt,
 	authUserStmt, loginUserVerifyStmt, loginUserStmt,
 	deleteSessionStmt, existsUserStmt, getUserListsStmt, getUserListStmt,
 	getUserListPlaceStmt, putUserListStmt, deleteUserListStmt,
-	suggestUserFriendsStmt, getUserFriendsStmt, addUserFriendStmt,
+	networkUserFriendsStmt, suggestUserFriendsStmt, contactsUserFriendsStmt,
+	getUserFriendsStmt, addUserFriendStmt,
 	deleteUserFriendStmt, getListTypesStmt, getWhooplistCoordinateStmt,
 	getWhooplistLocationStmt, addNewsfeedItemStmt, getNewsfeedStmt,
 	getNewsfeedEarlierStmt, getLocationStmt, getLocationCoordinateStmt,
@@ -71,7 +73,7 @@ func prepare() (err error) {
 
 	loginUserVerifyStmt, err = db.Prepare(
 		"SELECT id, email, name, fname, lname, birthday, school, picture, gender, role " +
-			"FROM wl.user WHERE email = $1 AND password_hash = $2;")
+			"FROM wl.user WHERE lower(email) = lower($1) AND password_hash = $2;")
 	if err != nil {
 		return
 	}
@@ -147,13 +149,65 @@ func prepare() (err error) {
 	addUserFriendStmt, err = db.Prepare(
 		"INSERT INTO wl.friend (from_id, to_id) VALUES ($1, $2);")
 	if err != nil {
-
+		return
 	}
 
 	deleteUserFriendStmt, err = db.Prepare(
 		"DELETE FROM wl.friend WHERE from_id = $1 AND to_id = $2;")
 	if err != nil {
+		return
+	}
 
+	/*	suggestUserFriendsStmt, err = db.Prepare(
+		"SELECT COUNT(*) user.id, email, name, fname, lname, birthday, " +
+		"school, picture, gender FROM wl.friend " +
+		"JOIN user ON user.id= to_id " +
+		"WHERE from_id IN " +
+		"(SELECT DISTINCT to_id FROM friend WHERE from_id = $1) AND "
+		"user.id NOT IN " +
+		"(SELECT DISTINCT to_id FROM friend WHERE from_id = $1) " +
+		"GROUP BY user.id")*/
+
+	networkUserFriendsStmt, err = db.Prepare(
+		"SELECT COUNT(*), wl.user.id, email, name, fname, lname, birthday, " +
+			"school, picture, gender FROM wl.friend " +
+			"JOIN wl.user ON wl.user.id = to_id " +
+			"WHERE from_id IN " +
+			"(SELECT DISTINCT to_id FROM friend WHERE from_id = $1) " +
+			"AND wl.user.id NOT IN " +
+			"(SELECT DISTINCT to_id FROM friend WHERE from_id = $1) " +
+			"AND wl.user.id <> $1 " +
+			"GROUP BY wl.user.id " +
+			"ORDER BY count DESC " +
+			"LIMIT 10;")
+	if err != nil {
+		return
+	}
+
+	suggestUserFriendsStmt, err = db.Prepare(
+		"SELECT COUNT(*), wl.user.id, email, name, fname, lname, birthday, " +
+			"school, picture, gender FROM wl.friend " +
+			"JOIN wl.user ON wl.user.id = to_id " +
+			"WHERE from_id IN " +
+			"(SELECT DISTINCT to_id FROM friend WHERE from_id = $1) " +
+			"AND wl.user.id NOT IN " +
+			"(SELECT DISTINCT to_id FROM friend WHERE from_id = $1) " +
+			"AND wl.user.id <> $1 " +
+			"GROUP BY wl.user.id " +
+			"ORDER BY count DESC " +
+			"LIMIT 10;")
+	if err != nil {
+		return
+	}
+
+	contactsUserFriendsStmt, err = db.Prepare(
+		"SELECT id, email, name, fname, lname, " +
+			"birthday, school, picture, gender FROM wl.user " +
+			"WHERE email IN (SELECT unnest (string_to_array($1, '&'))) " +
+			"OR phone IN (SELECT unnest (string_to_array($2, '&'))) " +
+			"GROUP BY wl.user.id;")
+	if err != nil {
+		return
 	}
 
 	getListTypesStmt, err = db.Prepare(
@@ -361,16 +415,19 @@ func UpdateUser(oldUser, user *User) (err error) {
 			return err
 		}
 
-		var blankUser User
-		res := loginUserVerifyStmt.QueryRow(user.Email, hash)
-		err = res.Scan(&blankUser.Id, &blankUser.Email, &blankUser.Name,
-			&blankUser.Fname, &blankUser.Lname, &blankUser.Birthday,
-			&blankUser.School, &blankUser.Picture, &blankUser.Gender,
-			&blankUser.Role)
+		var blankUsers []User
+		res, err := loginUserVerifyStmt.Query(user.Email, hash)
 
-		if err == sql.ErrNoRows {
+		if err != nil {
+			return err
+		}
+
+		err = sqlstruct.Scan(&blankUsers, res)
+
+		if len(blankUsers) != 1 {
 			return BadPassword
 		}
+
 		user.PasswordHash, err = Hash(*user.Email, *user.Password)
 		if err != nil {
 			return err
@@ -378,14 +435,18 @@ func UpdateUser(oldUser, user *User) (err error) {
 	}
 
 	if user.Picture != nil && !strings.HasPrefix(*user.Picture, baseUrl) {
+		log.Print("updating picture")
 		str, err := WriteFileBase64("profile.jpg", user.Picture, false)
 		if err != nil {
 			return err
 		}
 		user.Picture = &str
+		log.Print("newuser.picture = ", user.Picture)
 	}
 
 	err = mergo.Merge(user, *oldUser)
+
+	log.Print("after merge, newuser.picture = ", user.Picture)
 
 	if err != nil {
 		return err
@@ -633,6 +694,8 @@ func GetUserFriends(userId int64) (followers,
 
 func AddUserFriend(fromId, toId int64) (err error) {
 	_, err = addUserFriendStmt.Exec(fromId, toId)
+
+	err = AddNewsfeedItem(&FeedItem{UserId: fromId, Type: NfFriendAdded, Picture: "<Picture>", AuxInt: toId, AuxString: "<Name>"})
 	return
 }
 
@@ -641,10 +704,9 @@ func DeleteUserFriend(fromId, toId int64) (err error) {
 	return
 }
 
-func SuggestUserFriends(userId int64,
-	contacts []string) (users []User, err error) {
+func NetworkUserFriends(userId int64) (users []User, err error) {
 
-	rows, err := suggestUserFriendsStmt.Query(userId, contacts)
+	rows, err := networkUserFriendsStmt.Query(userId)
 
 	if err != nil {
 		return
@@ -667,6 +729,32 @@ func SuggestUserFriends(userId int64,
 		users = append(users, curr)
 	}
 
+	return
+}
+
+func ContactsUserFriends(userId int64, contacts []string) (users []User, err error) {
+
+	contactsStr := strings.Join(contacts, "&")
+	_, err = contactsUserFriendsStmt.Query(userId, contactsStr)
+
+	if err != nil {
+		return
+	}
+
+	users = make([]User, 0, 20)
+	return
+}
+
+func SuggestUserFriends(userId int64, contacts []string) (users []User, err error) {
+
+	contactsStr := strings.Join(contacts, "&")
+	_, err = suggestUserFriendsStmt.Query(userId, contactsStr)
+
+	if err != nil {
+		return
+	}
+
+	users = make([]User, 0, 20)
 	return
 }
 
