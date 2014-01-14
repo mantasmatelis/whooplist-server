@@ -7,7 +7,6 @@ import (
 	"encoding/base64"
 	"errors"
 	"github.com/imdario/mergo"
-	"github.com/kisielk/sqlstruct"
 	_ "github.com/lib/pq"
 	"io"
 	"log"
@@ -315,7 +314,7 @@ func prepare() (err error) {
 	return
 }
 
-func Hash(username, password string) (hash string, err error) {
+func Hash(email, password string) (hash string, err error) {
 	secret := "aYdZYlE9ybGXn5CldvQ3f/shKxNshtAOvqDlaw/wbUBHwc5r9zBal9hf9CDkGxSgddAMtNm+uz1G"
 	secretData, err := base64.StdEncoding.DecodeString(secret)
 
@@ -323,10 +322,10 @@ func Hash(username, password string) (hash string, err error) {
 		return
 	}
 
-	salt := make([]byte, len(secretData)+len(username))
+	salt := make([]byte, len(secretData)+len(email))
 
 	copy(salt, secretData)
-	copy(salt[len(secretData):], []byte(strings.ToLower(username)))
+	copy(salt[len(secretData):], []byte(strings.ToLower(email)))
 
 	hash_data, err := scrypt.Key([]byte(password), salt, 16384, 8, 1, 32)
 	hash = base64.StdEncoding.EncodeToString(hash_data)
@@ -415,17 +414,18 @@ func UpdateUser(oldUser, user *User) (err error) {
 			return err
 		}
 
-		var blankUsers []User
-		res, err := loginUserVerifyStmt.Query(user.Email, hash)
+		var blankUser User
+		res := loginUserVerifyStmt.QueryRow(user.Email, hash)
+		err = res.Scan(&blankUser.Id, &blankUser.Email, &blankUser.Name,
+			&blankUser.Fname, &blankUser.Lname, &blankUser.Birthday,
+			&blankUser.School, &blankUser.Picture, &blankUser.Gender,
+			&blankUser.Role)
 
 		if err != nil {
+			if err == sql.ErrNoRows {
+				return BadPassword
+			}
 			return err
-		}
-
-		err = sqlstruct.Scan(&blankUsers, res)
-
-		if len(blankUsers) != 1 {
-			return BadPassword
 		}
 
 		user.PasswordHash, err = Hash(*user.Email, *user.Password)
