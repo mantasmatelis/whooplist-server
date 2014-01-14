@@ -395,6 +395,15 @@ func CreateUser(user *User) (err error) {
 	_, err = createUserStmt.Exec(user.Email, user.Name, user.Fname,
 		user.Lname, user.Birthday, user.School, user.Picture,
 		user.Gender, hash, user.Role)
+
+	if err != nil {
+		return
+	}
+
+	//TODO: Get USER Id on query
+	AddNewsfeedItem(
+		&FeedItem{Type: NfWelcome, UserId: 0})
+
 	return
 }
 
@@ -409,7 +418,7 @@ func UpdateUser(oldUser, user *User) (err error) {
 			return WeakPassword
 		}
 
-		hash, err := Hash(*user.Email, *user.Password)
+		hash, err := Hash(*user.Email, *user.OldPassword)
 		if err != nil {
 			return err
 		}
@@ -635,6 +644,11 @@ func PutUserList(userId, listId int64, places []int64) (err error) {
 	}
 
 	tx.Commit()
+
+	//TODO: Figure out how to add picture
+	AddNewsfeedItem(
+		&FeedItem{Type: NfNewInUserList, UserId: userId, ListId: listId})
+
 	return
 
 }
@@ -695,7 +709,12 @@ func GetUserFriends(userId int64) (followers,
 func AddUserFriend(fromId, toId int64) (err error) {
 	_, err = addUserFriendStmt.Exec(fromId, toId)
 
-	err = AddNewsfeedItem(&FeedItem{UserId: fromId, Type: NfFriendAdded, Picture: "<Picture>", AuxInt: toId, AuxString: "<Name>"})
+	//TODO: Figure out how to add Picture and AuxStiring as name
+	err = AddNewsfeedItem(
+		&FeedItem{UserId: fromId, Type: NfFriendAdded, AuxInt: toId})
+	if err != nil {
+		return
+	}
 	return
 }
 

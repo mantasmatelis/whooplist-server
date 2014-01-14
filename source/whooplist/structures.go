@@ -96,7 +96,7 @@ type FeedItem struct {
 	/* Type Describes what the Newsfeed event is
 	* (No UserId) 1: Trending, 2: NewInWhooplist (AuxInt: Position)
 	*    (UserId) 3: Welcome, 4: WhyNotAdd,
-	          ... 5: NewInUserlist (AuxInt: Position),
+	          ... 5: UpdatedUserlist,
 	*         ... 6: Visiting 7: ProfilePictureUpdated,
 	*         ... 8: SchoolUpdated (AuxString: Name),
 	*         ... 9: FriendAdded (AuxInt: Id, AuxString: Name)
@@ -106,6 +106,8 @@ type FeedItem struct {
 	AuxInt    int64
 }
 
+//Add trending, newinwhooplist, WHYNOTADD, visiting, PROFILEPICTUREUPDATED,
+// SCHOOLUPDATED
 const (
 	NfTrending = iota
 	NfNewInWhooplist
