@@ -30,6 +30,9 @@ type User struct {
 	/* For the client to pass to user only */
 	Password    *string `json:",omitempty"`
 	OldPassword *string `json:",omitempty"`
+
+	/* For friend suggestion */
+	Score *int `json:",omitempty"`
 }
 
 /* Sessions offer long-term authenticated communication between

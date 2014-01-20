@@ -140,12 +140,12 @@ func NetworkUserFriends(userId int64) (users []User, err error) {
 	for rows.Next() {
 		var curr User
 
-		err = rows.Scan(&curr.Id, &curr.Email, &curr.Name,
+		err = rows.Scan(&curr.Score, &curr.Id, &curr.Email, &curr.Name,
 			&curr.Fname, &curr.Lname, &curr.Birthday, &curr.School,
 			&curr.Picture, &curr.Gender)
 
 		if err != nil {
-			rows = nil
+			users = nil
 			return
 		}
 
@@ -158,25 +158,56 @@ func NetworkUserFriends(userId int64) (users []User, err error) {
 func ContactsUserFriends(userId int64, contacts []string) (users []User, err error) {
 
 	contactsStr := strings.Join(contacts, "&")
-	_, err = contactsUserFriendsStmt.Query(userId, contactsStr)
+	rows, err := contactsUserFriendsStmt.Query(userId, contactsStr, contactsStr)
 
 	if err != nil {
 		return
 	}
 
 	users = make([]User, 0, 20)
+
+	for rows.Next() {
+		var curr User
+
+		err = rows.Scan(&curr.Id, &curr.Email, &curr.Name,
+			&curr.Fname, &curr.Lname, &curr.Birthday, &curr.School,
+			&curr.Picture, &curr.Gender)
+
+		if err != nil {
+			users = nil
+			return
+		}
+
+		users = append(users, curr)
+	}
+
 	return
 }
 
 func SuggestUserFriends(userId int64, contacts []string) (users []User, err error) {
 
 	contactsStr := strings.Join(contacts, "&")
-	_, err = suggestUserFriendsStmt.Query(userId, contactsStr)
+	rows, err := suggestUserFriendsStmt.Query(userId, contactsStr, contactsStr)
 
 	if err != nil {
 		return
 	}
 
 	users = make([]User, 0, 20)
+
+	for rows.Next() {
+		var curr User
+
+		err = rows.Scan(&curr.Score, &curr.Id, &curr.Email, &curr.Name,
+			&curr.Fname, &curr.Lname, &curr.Birthday, &curr.School,
+			&curr.Picture, &curr.Gender)
+
+		if err != nil {
+			users = nil
+			return
+		}
+
+		users = append(users, curr)
+	}
 	return
 }
