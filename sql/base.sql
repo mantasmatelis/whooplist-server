@@ -156,6 +156,10 @@ GRANT ALL ON ALL SEQUENCES IN SCHEMA wl TO whooplist;
 
 -- BEGIN TEST DATA
 
+INSERT INTO wl.session (user_id, key) VALUES (11, 'mantas');
+INSERT INTO wl.session (user_id, key) VALUES (12, 'dev');
+INSERT INTO wl.session (user_id, key) VALUES (13, 'jitesh');
+
 INSERT INTO wl.user
   (id, email, name, password_hash, role) VALUES
   (1001, 'test1@whooplist.com', 'Test 1', 'P', 't'),
