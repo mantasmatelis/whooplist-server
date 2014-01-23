@@ -35,9 +35,9 @@ func prepareUserFriend() {
 			"school, picture, gender FROM wl.friend "+
 			"JOIN wl.user ON wl.user.id = to_id "+
 			"WHERE from_id IN "+
-			"(SELECT DISTINCT to_id FROM friend WHERE from_id = $1) "+
+			"(SELECT DISTINCT to_id FROM wl.friend WHERE from_id = $1) "+
 			"AND wl.user.id NOT IN "+
-			"(SELECT DISTINCT to_id FROM friend WHERE from_id = $1) "+
+			"(SELECT DISTINCT to_id FROM wl.friend WHERE from_id = $1) "+
 			"AND wl.user.id <> $1 "+
 			"GROUP BY wl.user.id "+
 			"ORDER BY count DESC "+

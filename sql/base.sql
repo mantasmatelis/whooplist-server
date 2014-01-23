@@ -173,6 +173,12 @@ INSERT INTO wl.user
   (1009, 'test9@whooplist.com', 'Test 9', 'P', 't'),
   (1010, 'test10@whooplist.com', 'Test 10', 'P', 't');
 
+INSERT INTO wl.session (user_id, key) VALUES 
+  (1001, 'test1'), (1002, 'test2'), (1003, 'test3'),
+  (1004, 'test4'), (1005, 'test5'), (1006, 'test6'),
+  (1007, 'test7'), (1008, 'test8'), (1009, 'test9'),
+  (1010, 'test10');
+
 INSERT INTO wl.friend
   (from_id, to_id) VALUES
   (1001, 1002), (1001, 1003), (1001, 1004), (1001, 1005), (1001, 1006), (1001, 1007), (1001, 1008), (1001, 1009),
