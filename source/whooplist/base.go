@@ -32,7 +32,7 @@ func Initialize() (err error) {
 		return err
 	}
 
-	initializeOauth()
+	factualInitialize()
 
 	prepareUser()
 	prepareUserFriend()

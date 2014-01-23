@@ -223,6 +223,20 @@ func UpdateUser(oldUser, user *User) (err error) {
 	_, err = updateUserStmt.Exec(user.Email, user.Name, user.Fname,
 		user.Lname, user.Birthday, user.School, user.Picture,
 		user.Gender, user.PasswordHash, user.Role)
+
+	if err != nil {
+		return err
+	}
+
+	if user.Picture != oldUser.Picture {
+		AddNewsfeedItem(&FeedItem{Type: NfProfilePictureUpdated,
+			UserId: *user.Id, Picture: *user.Picture})
+	}
+
+	if user.School != oldUser.School {
+		AddNewsfeedItem(&FeedItem{Type: NfSchoolUpdated,
+			UserId: *user.Id, Picture: *user.Picture, AuxString: user.School})
+	}
 	return
 }
 

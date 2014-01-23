@@ -7,12 +7,12 @@ import (
 	"strconv"
 )
 
-const oauthKey = "DSGgIoFt5B0B5YjeXLOzb61p2t2H00Pc1GD1xvXe"
-const oauthSecret = "qfE5c4TbLtjvgoJhph5g1MIPuxKLxjpusxRKr4Zr"
+const factualOauthKey = "DSGgIoFt5B0B5YjeXLOzb61p2t2H00Pc1GD1xvXe"
+const factualOauthSecret = "qfE5c4TbLtjvgoJhph5g1MIPuxKLxjpusxRKr4Zr"
 const factualV3Url = "http://api.v3.factual.com/t/"
 const factualLimit = 40
 
-var oConsumer *oauth.Consumer
+var factualConsumer *oauth.Consumer
 
 type factualManyResp struct {
 	Version  int    `json:"version"`
@@ -46,16 +46,16 @@ type factualPlace struct {
 	Website         string      `json:"website"`
 }
 
-func initializeOauth() {
-	if oConsumer != nil {
+func factualInitialize() {
+	if factualConsumer != nil {
 		return
 	}
 
-	oConsumer = oauth.NewConsumer(oauthKey, oauthSecret,
+	factualConsumer = oauth.NewConsumer(factualOauthKey, factualOauthSecret,
 		oauth.ServiceProvider{})
 }
 
-func factualSearchPlace(str string, lat, long, radius float64,
+func factualPlaceSearch(str string, lat, long, radius float64,
 	page int32) (places []Place, err error) {
 
 	latS := strconv.FormatFloat(lat, 'f', -1, 64)
@@ -69,7 +69,7 @@ func factualSearchPlace(str string, lat, long, radius float64,
 	params["offset"] = strconv.Itoa((int(page) - 1) * factualLimit)
 	params["limit"] = strconv.Itoa(factualLimit)
 
-	respHttp, err := oConsumer.Get(factualV3Url+"places",
+	respHttp, err := factualConsumer.Get(factualV3Url+"places",
 		params, &oauth.AccessToken{})
 	if err != nil {
 		return
@@ -89,7 +89,7 @@ func factualSearchPlace(str string, lat, long, radius float64,
 
 	places = make([]Place, data.Response.IncludedRows)
 	for i := 0; i < data.Response.IncludedRows; i++ {
-		decodeFactualPlace(&data.Response.Data[i], &places[i])
+		factualPlaceDecode(&data.Response.Data[i], &places[i])
 	}
 
 	return
@@ -97,7 +97,7 @@ func factualSearchPlace(str string, lat, long, radius float64,
 
 //TODO: Implement get single place, at factualV3Url+"places/"+factualId
 
-func decodeFactualPlace(fP *factualPlace, p *Place) {
+func factualPlaceDecode(fP *factualPlace, p *Place) {
 	p.Latitude = fP.Latitude
 	p.Longitude = fP.Longitude
 	p.FactualId = fP.FactualId

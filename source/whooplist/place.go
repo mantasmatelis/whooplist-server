@@ -75,7 +75,7 @@ func GetPlace(placeId int64) (place *Place, err error) {
 func SearchPlace(str string, listId int64, page int32,
 	lat, long, radius float64) (places []Place, err error) {
 
-	places, err = factualSearchPlace(str, lat, long, radius, page)
+	places, err = factualPlaceSearch(str, lat, long, radius, page)
 
 	if err != nil {
 		places = nil
