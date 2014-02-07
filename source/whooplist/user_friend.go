@@ -105,7 +105,7 @@ func GetUserFriends(userId int64) (followers,
 			both = nil
 			return
 		}
-		//users = append(users, curr)
+
 	}
 	return
 }

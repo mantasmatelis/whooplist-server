@@ -32,8 +32,7 @@ type FeedItem struct {
 	AuxInt    int64
 }
 
-//Add trending, newinwhooplist, WHYNOTADD, visiting, PROFILEPICTUREUPDATED,
-// SCHOOLUPDATED
+//Add trending, newinwhooplist, WHYNOTADD, visiting
 const (
 	NfTrending = iota
 	NfNewInWhooplist

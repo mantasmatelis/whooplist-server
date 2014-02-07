@@ -73,6 +73,9 @@ func main() {
 		route.Route{"GET",
 			"/places/search/:ListId/:Lat/:Long/:Radius/:Page/*SearchString",
 			SearchPlace},
+		route.Route{"GET",
+			"/places/search/:ListId/:Lat/:Long/:Radius/:Page",
+			SearchPlace},
 		route.Route{"GET", "/places/:PlaceId", GetPlace},
 	)
 

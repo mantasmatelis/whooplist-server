@@ -63,7 +63,11 @@ func factualPlaceSearch(str string, lat, long, radius float64,
 	radiusS := strconv.FormatFloat(radius, 'f', -1, 64)
 
 	params := make(map[string]string)
-	params["q"] = str
+
+	if str != "" {
+		params["q"] = str
+	}
+
 	params["geo"] = "{\"$circle\":{\"$center\":[" + latS + "," + longS +
 		"],\"$meters\":" + radiusS + "}}"
 	params["offset"] = strconv.Itoa((int(page) - 1) * factualLimit)

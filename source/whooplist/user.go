@@ -61,7 +61,8 @@ func prepareUser() {
 	stmt(&createUserStmt,
 		"INSERT INTO wl.user (email, name, fname, lname, birthday, "+
 			"school, picture, gender, password_hash, role) "+
-			"VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10);")
+			"VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) "+
+			"RETURNING id;")
 
 	stmt(&updateUserStmt,
 		"UPDATE wl.user SET name = $2, fname = $3, lname = $4, "+
@@ -151,9 +152,11 @@ func CreateUser(user *User) (err error) {
 		return
 	}
 
-	_, err = createUserStmt.Exec(user.Email, user.Name, user.Fname,
+	res := createUserStmt.QueryRow(user.Email, user.Name, user.Fname,
 		user.Lname, user.Birthday, user.School, user.Picture,
 		user.Gender, hash, user.Role)
+
+	err = res.Scan(user.Id)
 
 	if err != nil {
 		return
@@ -161,7 +164,7 @@ func CreateUser(user *User) (err error) {
 
 	//TODO: Get USER Id on query
 	AddNewsfeedItem(
-		&FeedItem{Type: NfWelcome, UserId: 0})
+		&FeedItem{Type: NfWelcome, UserId: *user.Id, Picture: *user.Picture})
 
 	return
 }
@@ -235,7 +238,7 @@ func UpdateUser(oldUser, user *User) (err error) {
 
 	if user.School != oldUser.School {
 		AddNewsfeedItem(&FeedItem{Type: NfSchoolUpdated,
-			UserId: *user.Id, Picture: *user.Picture, AuxString: user.School})
+			UserId: *user.Id, Picture: *user.Picture, AuxString: *user.School})
 	}
 	return
 }
