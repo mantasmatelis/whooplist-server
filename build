@@ -1,8 +1,21 @@
 #!/bin/bash
 
-source ~/go/src/golang-crosscompile/crosscompile.bash
+os=`uname -s`
+
 echo Building...
-go-linux-amd64 build -o ./api ./source/api
+
+case $os in
+	Darwin) 
+		source ~/go/src/golang-crosscompile/crosscompile.bash
+		go-linux-amd64 build -o ./api ./source/api
+	;;
+	Linux) 
+		go build -o ./api ./source/api
+	;;
+	*)
+		echo Unknown OS: $os ; exit 1 
+	;;
+esac
 if [ $? -ne 0 ]; then
     echo Build failed, exiting
     exit 1
