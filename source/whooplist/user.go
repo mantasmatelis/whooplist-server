@@ -156,7 +156,7 @@ func CreateUser(user *User) (err error) {
 		user.Lname, user.Birthday, user.School, user.Picture,
 		user.Gender, hash, user.Role)
 
-	err = res.Scan(user.Id)
+	err = res.Scan(&user.Id)
 
 	if err != nil {
 		return
