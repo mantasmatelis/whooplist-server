@@ -1,0 +1,3 @@
+#/usr/bin/bash
+
+cat base.sql | ./transform.py > transformed.sql
