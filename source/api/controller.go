@@ -101,6 +101,29 @@ func DeleteUserList(w http.ResponseWriter, req *http.Request, ctx Context) {
 	if_error(whooplist.DeleteUserList(*ctx.User.Id, listId))
 }
 
+func AppendUserList(w http.ResponseWriter, req *http.Request, ctx Context) {
+	//TODO: Do this in database
+	ensure(ctx.User != nil, 403)
+
+	listId := parseInt64(ctx.Params["ListId"])
+	placeId := parseInt64(ctx.Params["PlaceId"])
+	userId := *ctx.User.Id
+
+	places, err := whooplist.GetUserList(userId, listId)
+	if_error(err)
+
+	placeIds := make([]int64, 0, len(places)+1)
+
+	for i := 0; i < len(places); i++ {
+		placeIds = append(placeIds, places[i].Id)
+	}
+
+	placeIds = append(placeIds, placeId)
+
+	err = whooplist.PutUserList(userId, listId, placeIds)
+	if_error(err)
+}
+
 type UserFriendsResponse struct {
 	Followers []whooplist.User
 	Following []whooplist.User

@@ -39,6 +39,8 @@ func main() {
 		route.Route{"GET", "/users/:UserId/lists/:ListId", GetUserList},
 		route.Route{"POST", "/users/lists/:ListId", CreateUserList},
 		route.Route{"DELETE", "/users/lists/:ListId", DeleteUserList},
+		route.Route{"POST", "/users/lists/:ListId/append/:PlaceId",
+			AppendUserList},
 
 		/* User Friend Routes */
 		route.Route{"GET", "/users/:UserId/friends", GetUserFriends},
