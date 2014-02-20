@@ -1,8 +1,8 @@
 *.sw*
 api
-source/api/api
 source/api/api.log
 source/user_hash/user_hash
+source/utilities/base_data_transform/base_data_transform
 backups/*
 .DS_Store
 sql/transformed.sql
