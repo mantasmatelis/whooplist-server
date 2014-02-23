@@ -2,7 +2,6 @@ package whooplist
 
 import (
 	"database/sql"
-	"log"
 	"strings"
 )
 
@@ -11,6 +10,7 @@ var networkUserFriendsStmt, suggestUserFriendsStmt,
 	addUserFriendStmt, deleteUserFriendStmt *sql.Stmt
 
 func prepareUserFriend() {
+	//TODO: Only deal with ids, deal with other user fields in outer query
 	stmt(&getUserFriendsStmt,
 		"SELECT SUM(direction), id, email, name, fname, lname, birthday, "+
 			"school, picture, gender FROM "+
@@ -87,9 +87,6 @@ func GetUserFriends(userId int64) (followers,
 		err = rows.Scan(&direction, &curr.Id, &curr.Email, &curr.Name,
 			&curr.Fname, &curr.Lname, &curr.Birthday, &curr.School,
 			&curr.Picture, &curr.Gender)
-
-		log.Print(direction)
-		log.Print(curr)
 
 		if direction == 1 {
 			followers = append(followers, curr)

@@ -26,13 +26,13 @@ func stmt(s **sql.Stmt, query string) {
 func Initialize() (err error) {
 	db, err = sql.Open("postgres",
 		"user=whooplist dbname=whooplist password=moteifae0ohcaiCo "+
-			"sslmode=disable search_path=wl host=localhost")
+			"sslmode=disable search_path=wl host=whooplist.com")
 
 	if err != nil {
 		return err
 	}
 
-	factualInitialize()
+	FactualInitialize()
 
 	prepareUser()
 	prepareUserFriend()

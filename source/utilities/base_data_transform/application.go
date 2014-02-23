@@ -1,7 +1,7 @@
 package main
 
 import (
-	//"../../whooplist"
+	"../../whooplist"
 	"bufio"
 	"encoding/csv"
 	"fmt"
@@ -16,7 +16,7 @@ type item struct {
 }
 
 func main() {
-
+	whooplist.Initialize()
 	fin := os.Stdin
 	bufr := bufio.NewReader(fin)
 	reader := csv.NewReader(bufr)
@@ -61,6 +61,18 @@ func main() {
 	}
 
 	for _, item := range items {
-		fmt.Printf("%+v\n", item)
+		//fmt.Printf("%+v\n", item)
+		place, err := whooplist.GetPlaceFactual(item.factual_id)
+		if err != nil {
+			fmt.Println("error: " + err.Error())
+		}
+		if place == nil {
+			place, err = whooplist.FactualPlace(item.factual_id)
+			if err != nil {
+				fmt.Println("error: " + err.Error())
+				continue
+			}
+		}
+		fmt.Printf("%+v\n", place)
 	}
 }

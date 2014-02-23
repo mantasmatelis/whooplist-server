@@ -55,10 +55,15 @@ func preparePlace() {
 
 }
 
-func GetPlace(placeId int64) (place *Place, err error) {
-	place = new(Place)
+func GetPlaceId(placeId int64) (place *Place, err error) {
+	return getPlaceDb(getPlaceStmt.QueryRow(placeId))
+}
 
-	res := getPlaceStmt.QueryRow(placeId)
+func GetPlaceFactual(placeId string) (place *Place, err error) {
+	return getPlaceDb(getPlaceByFactualStmt.QueryRow(placeId))
+}
+
+func getPlaceDb(res *sql.Row) (place *Place, err error) {
 	err = res.Scan(&place.Id, &place.Latitude, &place.Longitude,
 		&place.FactualId, &place.Name, &place.Address, &place.Locality,
 		&place.Region, &place.Postcode, &place.Country,

@@ -22,7 +22,6 @@ type factualManyResp struct {
 		IncludedRows int            `json:"included_rows"`
 	} `json:"response"`
 }
-
 type factualPlace struct {
 	Address         string      `json:"address"`
 	AddressExtended string      `json:"address_extended"`
@@ -46,7 +45,7 @@ type factualPlace struct {
 	Website         string      `json:"website"`
 }
 
-func factualInitialize() {
+func FactualInitialize() {
 	if factualConsumer != nil {
 		return
 	}
@@ -99,7 +98,34 @@ func factualPlaceSearch(str string, lat, long, radius float64,
 	return
 }
 
-//TODO: Implement get single place, at factualV3Url+"places/"+factualId
+func FactualPlace(id string) (place *Place, err error) {
+	respHttp, err := factualConsumer.Get(factualV3Url+"places/"+id,
+		make(map[string]string), &oauth.AccessToken{})
+
+	if err != nil {
+		return
+	}
+
+	resp, err := ioutil.ReadAll(respHttp.Body)
+	respHttp.Body.Close()
+	if err != nil {
+		return
+	}
+
+	var data = &factualManyResp{}
+	err = json.Unmarshal(resp, &data)
+
+	if err != nil {
+		return
+	}
+
+	if len(data.Response.Data) != 1 {
+		return
+	}
+	place = &Place{}
+	factualPlaceDecode(&data.Response.Data[0], place)
+	return
+}
 
 func factualPlaceDecode(fP *factualPlace, p *Place) {
 	p.Latitude = fP.Latitude

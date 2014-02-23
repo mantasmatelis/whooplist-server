@@ -141,14 +141,14 @@ func GetUserFriends(w http.ResponseWriter, req *http.Request, ctx Context) {
 
 func AddUserFriend(w http.ResponseWriter, req *http.Request, ctx Context) {
 	ensure(ctx.User != nil, 403)
-	userId := parseInt64(ctx.Params["UserId"])
+	userId := parseInt64(ctx.Params["OtherId"])
 
 	if_error(whooplist.AddUserFriend(*ctx.User.Id, userId))
 }
 
 func DeleteUserFriend(w http.ResponseWriter, req *http.Request, ctx Context) {
 	ensure(ctx.User != nil, 403)
-	userId := parseInt64(ctx.Params["UserId"])
+	userId := parseInt64(ctx.Params["OtherId"])
 
 	if_error(whooplist.DeleteUserFriend(*ctx.User.Id, userId))
 }
@@ -252,7 +252,7 @@ func GetNewsfeedOlder(w http.ResponseWriter, req *http.Request, ctx Context) {
 
 func GetPlace(w http.ResponseWriter, req *http.Request, ctx Context) {
 	placeId := parseInt64(ctx.Params["PlaceId"])
-	place, err := whooplist.GetPlace(placeId)
+	place, err := whooplist.GetPlaceId(placeId)
 	if_error(err)
 
 	ensure(place != nil, 404)
