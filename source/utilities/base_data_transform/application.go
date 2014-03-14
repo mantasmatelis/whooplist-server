@@ -7,12 +7,17 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 )
 
 type item struct {
 	rank       int
 	list_id    int
 	factual_id string
+}
+
+func e(str string) string {
+	return strings.Replace(str, "'", "\\'", -1)
 }
 
 func main() {
@@ -41,7 +46,6 @@ func main() {
 	for _, row := range data {
 		rank, err := strconv.Atoi(row[0])
 		if err != nil {
-			//fmt.Printf("invalid row: %s\n", row[0])
 			continue
 		}
 		for i := 0; i < len(row); i++ {
@@ -50,7 +54,6 @@ func main() {
 			}
 			header_val, err := strconv.Atoi(header[i])
 			if err != nil {
-				//fmt.Printf("invalid header: %s\n", header[i])
 				continue
 			}
 			if row[i] == "" {
@@ -61,18 +64,25 @@ func main() {
 	}
 
 	for _, item := range items {
-		//fmt.Printf("%+v\n", item)
 		place, err := whooplist.GetPlaceFactual(item.factual_id)
 		if err != nil {
-			fmt.Println("error: " + err.Error())
+			fmt.Errorf("error: " + err.Error())
 		}
 		if place == nil {
 			place, err = whooplist.FactualPlace(item.factual_id)
 			if err != nil {
-				fmt.Println("error: " + err.Error())
+				fmt.Errorf("error: " + err.Error())
 				continue
 			}
 		}
-		fmt.Printf("%+v\n", place)
+
+		fmt.Printf("INSERT INTO wl.place (latitude, longitude, factual_id, name, "+
+			"address, locality, region, postcode, country, telephone, "+
+			"website, email) "+
+			"VALUES (%v, %v, '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s') RETURNING id;\n",
+			place.Latitude, place.Longitude, e(place.FactualId),
+			e(place.Name), e(place.Address), e(place.Locality),
+			e(place.Region), e(place.Postcode), e(place.Country),
+			e(place.Tel), e(place.Website), e(place.Email))
 	}
 }

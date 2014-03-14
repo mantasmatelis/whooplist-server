@@ -64,6 +64,7 @@ func GetPlaceFactual(placeId string) (place *Place, err error) {
 }
 
 func getPlaceDb(res *sql.Row) (place *Place, err error) {
+	place = &Place{}
 	err = res.Scan(&place.Id, &place.Latitude, &place.Longitude,
 		&place.FactualId, &place.Name, &place.Address, &place.Locality,
 		&place.Region, &place.Postcode, &place.Country,

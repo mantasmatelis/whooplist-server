@@ -36,6 +36,8 @@ func panicHandler(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if rec := recover(); rec != nil {
+				go whooplist.SlackPostError("Panic: \n" +
+					string(debug.Stack()))
 				/* If we're dealing with an internal API error,
 				   return the proper code and drop out */
 				if aE, ok := rec.(apiError); ok {
@@ -152,6 +154,8 @@ func if_error(err error) {
 		ensure(err != whooplist.UserError, 400)
 		ensure(err != whooplist.WeakPassword, 410)
 		ensure(err != whooplist.BadPassword, 403)
+		go whooplist.SlackPostError("Error: \n" +
+			string(debug.Stack()))
 		panic(apiError{code: 500, err: err})
 	}
 
